@@ -91,3 +91,7 @@ Szczegółowy opis działania modułów
 Spis treści:
 -------------
 [TOC]
+
+
+
+> Written with [StackEdit](https://stackedit.io/).
