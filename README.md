@@ -13,24 +13,6 @@ Na podstawie żądań <b>Modułu 3</b> wykonuj tracerouta (TODO: lepiej to ubra�
 ####Moduł 3: Centrum kontroli danych:
 Obsługuje dwie kolejki żądań: od <b> modułu 1</b> i <b> modułu 2</b>(może również żądać wykonywania zadań). Na ich podstawie dokonuje parsowania danych do formy rozumianej przez konkretne moduły i przesyłania ich do bazy lub wyciągania z bazy w celu dalszej obróbki i zwrócenia żądanych danych.
 
-```sequence
-World->Moduł 1: JSON(prośba o traceroute)
-Moduł 1->World: JSON(nr. zad)
-Moduł 1-->Moduł 3: Object(adresy IP + nr. zad)
-Moduł 3-->SQLite: Object(Numer zadania)
-Moduł 3-->Moduł 2: Object(adresy IP + nr. zad)
-Moduł 2-->Moduł 3: Object(Wynik tracerouta + nr. zad)
-Moduł 3->Moduł 3: Parsowanie danych
-Moduł 3-->SQLite: SQL(Sprasowane dane z tracerouta)
-World->Moduł 1: JSON(nr. zad)
-Moduł 1->Moduł 3: Object(nr. zad)
-Moduł 3->SQLite: SQL(numer zadania)
-SQLite->Moduł 3: Data(dane z tracerouta)
-Moduł 3->Moduł 3: Parsowanie danych
-Moduł 3->Moduł 1: Object("dane sparsowane")
-Moduł 1->World: JSON(dane)
-```
-
 Struktury danych
 -------------
 
@@ -87,7 +69,3 @@ Szczegółowy opis działania modułów
 ###Moduł 1
 ###Moduł 2
 ###Moduł 3
-
-Spis treści:
--------------
-[TOC]
