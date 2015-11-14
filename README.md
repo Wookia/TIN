@@ -68,8 +68,8 @@ SzczegÃ³Å‚owy opis dziaÅ‚ania moduÅ‚Ã³w
 -------------
 ###ModuÅ‚ 1
 
-###ModuÅ‚ 2
-ModuÅ‚ nr 2 wykonuje operacjÄ™ trasowania pakietÃ³w. Wykorzystuje protokÃ³Å‚ ICMP - internetowy protokÃ³Å‚ komunikatÃ³w kontrolnych. Podzielony jest na trzy zasadnicze elementy - generator pakietÃ³w, wÄ…tki wysyÅ‚ajÄ…ce pakiety oraz wÄ…tek odbierajÄ…cy pakiety i rozdzielajÄ…cy odebrane dane wedÅ‚ug odpowiednich pÃ³l nagÅ‚Ã³wka komunikatu. Generator pakietÃ³w generuje pakiety o okreÅ›lonym TTL (Time-To-Live) i okreÅ›lonych wartoÅ›ciach pÃ³l Sequence i Identifier. Identifier to caÅ‚kowitoliczbowy identyfikator konkretnej Å›ledzonej trasy, a Sequence to TTL pakietu. DziÄ™ki moÅ¼liwoÅ›ci identyfikacji pakietÃ³w naleÅ¼Ä…cych do poszczegÃ³lnych tras i o konkretnych TTL, aplikacja moÅ¼e Å›ledziÄ‡ wiele Å›cieÅ¼ek na raz.
+###Modu³ 2
+Modu³ nr 2 wykonuje operacjê trasowania pakietów. Wykorzystuje protokó³ ICMP - internetowy protokó³ komunikatów kontrolnych. Modu³ podzielony jest na trzy zasadnicze elementy - generator pakietów, w¹tki wywys³aj¹ce pakiety oraz w¹tek odbieraj¹cy pakiety i rozdzielaj¹cy odebrane dane wed³ug odpowiednich pól nag³ówka odebranego komunikatu. Generator pakietów generuje pakiety o okreœloym TTL (Time-To-Live_ i okreœlonych wartoœciach pól Sequence i Identifier. Identifier to ca³kowitoliczbowy identyfikator konkretnej œledzonej trasy (czyli te¿ w¹tku wysy³aj¹cego), a Sequence to TTL pakietu. Dziêki mo¿liwoœci identyfikacji pakietów nale¿¹cych do poszczególnych tras i o konkretnych TTL, aplikacja mo¿e œledziæ wiele œcie¿ek na raz.
 
 Modu³ do ³¹czenia siê ze œwiatem zewnêtrznym wykorzystuje tzw. "raw sockets", czyli gniazda umo¿liwiaj¹ce wysy³kê i odbiór pakietów IP bez informacji warstwy transportu. 
 
