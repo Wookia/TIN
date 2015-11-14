@@ -67,5 +67,7 @@ Id, Nr, Id-poprzednika
 Szczegółowy opis działania modułów
 -------------
 ###Moduł 1
+
 ###Moduł 2
+
 ###Moduł 3
