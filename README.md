@@ -68,19 +68,25 @@ SzczegÃ³Å‚owy opis dziaÅ‚ania moduÅ‚Ã³w
 -------------
 ###ModuÅ‚ 1
 
-###Modu³ 2
-Modu³ nr 2 wykonuje operacjê trasowania pakietów. Wykorzystuje protokó³ ICMP - internetowy protokó³ komunikatów kontrolnych. Modu³ podzielony jest na trzy zasadnicze elementy - generator pakietów, w¹tki wywys³aj¹ce pakiety oraz w¹tek odbieraj¹cy pakiety i rozdzielaj¹cy odebrane dane wed³ug odpowiednich pól nag³ówka odebranego komunikatu. Generator pakietów generuje pakiety o okreœloym TTL (Time-To-Live_ i okreœlonych wartoœciach pól Sequence i Identifier. Identifier to ca³kowitoliczbowy identyfikator konkretnej œledzonej trasy (czyli te¿ w¹tku wysy³aj¹cego), a Sequence to TTL pakietu. Dziêki mo¿liwoœci identyfikacji pakietów nale¿¹cych do poszczególnych tras i o konkretnych TTL, aplikacja mo¿e œledziæ wiele œcie¿ek na raz.
+###ModuÅ‚ 2
+ModuÅ‚ nr 2 wykonuje operacjÄ™ trasowania pakietÃ³w. Wykorzystuje protokÃ³Å‚ ICMP - internetowy protokÃ³Å‚ komunikatÃ³w kontrolnych. ModuÅ‚ podzielony jest na trzy zasadnicze elementy - generator pakietÃ³w, wÄ…tki wywysÅ‚ajÄ…ce pakiety oraz wÄ…tek odbierajÄ…cy pakiety i rozdzielajÄ…cy odebrane dane wedÅ‚ug odpowiednich pÃ³l nagÅ‚Ã³wka odebranego komunikatu. Generator pakietÃ³w generuje pakiety o okreÅ›loym TTL (Time-To-Live_ i okreÅ›lonych wartoÅ›ciach pÃ³l Sequence i Identifier. Identifier to caÅ‚kowitoliczbowy identyfikator konkretnej Å›ledzonej trasy (czyli teÅ¼ wÄ…tku wysyÅ‚ajÄ…cego), a Sequence to TTL pakietu. DziÄ™ki moÅ¼liwoÅ›ci identyfikacji pakietÃ³w naleÅ¼Ä…cych do poszczegÃ³lnych tras i o konkretnych TTL, aplikacja moÅ¼e Å›ledziÄ‡ wiele Å›cieÅ¼ek na raz.
 
-Modu³ do ³¹czenia siê ze œwiatem zewnêtrznym wykorzystuje tzw. "raw sockets", czyli gniazda umo¿liwiaj¹ce wysy³kê i odbiór pakietów IP bez informacji warstwy transportu. 
+ModuÅ‚ do Å‚Ä…czenia siÄ™ ze Å›wiatem zewnÄ™trznym wykorzystuje tzw. "raw sockets", czyli gniazda umoÅ¼liwiajÄ…ce wysyÅ‚kÄ™ i odbiÃ³r pakietÃ³w IP bez informacji warstwy transportu. 
 
-Maksymalny TTL, liczba pakietów bez informacji zwrotnej i oczekiwanie na odpowiedŸ to parametry konfiguracyjne, które mog¹ byæ okreœlone w pliku XML i otagowane identyfikatorami <ttl> (1-255), <attempts> oraz <timeout>.
+Maksymalny TTL, liczba pakietÃ³w bez informacji zwrotnej i oczekiwanie na odpowiedÅº to parametry konfiguracyjne, ktÃ³re mogÄ… byÄ‡ okreÅ›lone w pliku XML i otagowane identyfikatorami <ttl> (1-255), <attempts> oraz <timeout>.
 
 Algorytm trasowania:
-1. Przyjmij od modu³u nr 3 dane okreœlaj¹ce, jaka trasa ma byæ wyznaczona.
-2. Uruchom w¹tek wysy³aj¹cy pakiety. W¹tek ma przydzielony "identyfikator trasy", który zostanie wykorzystany jako pole Identifier w nag³ówku ICMP.
+
+1. Przyjmij od moduÅ‚u nr 3 dane okreÅ›lajÄ…ce, jaka trasa ma byÄ‡ wyznaczona.
+
+2. Uruchom wÄ…tek wysyÅ‚ajÄ…cy pakiety. WÄ…tek ma przydzielony "identyfikator trasy", ktÃ³ry zostanie wykorzystany jako pole Identifier w nagÅ‚Ã³wku ICMP.
+
 3. n = 1.
-4. Wygeneruj za pomoc¹ generatora pakiet o TTL = n, Identifier = identyfikator trasy, Sequence = n, wyœlij go i poinformuj w¹tek odbieraj¹cy o koniecznoœci rozpoczêcia odmierzania czasu przeznaczonego na odbiór pakietu. Po tym czasie w¹tek odbieraj¹cy poinformuje w¹tek wysy³aj¹cy, ¿e mo¿e spróbowaæ jeszcze raz (ale maksymalnie tyle razy, ile wynosi parametr Attempts).
-5. Czekaj na informacjê zwrotn¹ od w¹tku odbieraj¹cego zawieraj¹c¹ adres IP routera poœrednicz¹cego i kod odpowiedzi. Zinterpretuj informacjê - byæ mo¿e nale¿y zakoñczyæ trasowanie. Jeœli nie, dodaj adres do trasy. n += 1 i wróæ do punktu 3.
-6. Po zakoñczeniu trasowania w¹tek wysy³aj¹cy przesy³a do Modu³u nr 3 wyznaczon¹ trasê lub jej fragment/kod b³êdu.
+
+4. Wygeneruj za pomocÄ… generatora pakiet o TTL = n, Identifier = identyfikator trasy, Sequence = n, wyÅ›lij go i poinformuj wÄ…tek odbierajÄ…cy o koniecznoÅ›ci rozpoczÄ™cia odmierzania czasu przeznaczonego na odbiÃ³r pakietu. Po tym czasie wÄ…tek odbierajÄ…cy poinformuje wÄ…tek wysyÅ‚ajÄ…cy, Å¼e moÅ¼e sprÃ³bowaÄ‡ jeszcze raz (ale maksymalnie tyle razy, ile wynosi parametr Attempts).
+
+5. Czekaj na informacjÄ™ zwrotnÄ… od wÄ…tku odbierajÄ…cego zawierajÄ…cÄ… adres IP routera poÅ›redniczÄ…cego i kod odpowiedzi. Zinterpretuj informacjÄ™ - byÄ‡ moÅ¼e naleÅ¼y zakoÅ„czyÄ‡ trasowanie. JeÅ›li nie, dodaj adres do trasy. n += 1 i wrÃ³Ä‡ do punktu 3.
+
+6. Po zakoÅ„czeniu trasowania wÄ…tek wysyÅ‚ajÄ…cy przesyÅ‚a do ModuÅ‚u nr 3 wyznaczonÄ… trasÄ™ lub jej fragment/kod bÅ‚Ä™du.
 
 ###ModuÅ‚ 3
