@@ -87,6 +87,6 @@ Algorytm trasowania:
 
 5. Czekaj na informację zwrotną od wątku odbierającego zawierającą adres IP routera pośredniczącego i kod odpowiedzi. Zinterpretuj informację - być może należy zakończyć trasowanie. Jeśli nie, dodaj adres do trasy. n += 1 i wróć do punktu 3.
 
-6. Po zakończeniu trasowania wątek wysyłający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu.
+6. Po zakończeniu trasowania wątek wysyłający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów).
 
 ###Moduł 3
