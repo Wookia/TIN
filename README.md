@@ -67,6 +67,9 @@ Id, Nr, Id-poprzednika
 Szczegółowy opis działania modułów
 -------------
 ###Moduł 1
+Moduł nr 1 obsługuje komunikację między serwerem HTTP a klientem poprzez znaczniki JSON. Klient wysyła do serwera żądanie wykonania operacji "traceroute", w zamian serwer przesyła te żądanie do kolejki żądań modułu nr 1, znajdującej się w module nr 3, oraz zwraca JSOna z numerem tego zadania w kolejce. Ten numer jest nieformalnym "wskaźnikiem", do którego klient może się odwołać w celu uzyskania danych wynikowych operacji "traceroute" dla tego zadania. Ów proces odbywa się również poprzez wzajemne przesyłanie JSONów. Klient przesyła zapytanie o dane zadania o podanym wcześniej przez serwer numerze. Natomiast serwer przysyła JSONa z danymi wynikowymi.
+
+Osobny wątek nasłuchuje połączeń na porcie 80 (HTTP).
 
 ###Moduł 2
 Moduł nr 2 wykonuje operację trasowania pakietów. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych. Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy). Moduł podzielony jest na trzy zasadnicze elementy - generator pakietów, wątki wywysłające pakiety oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Generator pakietów generuje pakiety o określoym TTL (Time-To-Live) i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy (czyli też wątku wysyłającego), a Sequence to TTL pakietu. Dzięki możliwości identyfikacji pakietów należących do poszczególnych tras i o konkretnych TTL, aplikacja może śledzić wiele ścieżek na raz.
