@@ -1,15 +1,15 @@
 TIN
 ===================
 
-Celem zadania jest implementacja serwera umożliwiającego współbieżne wykonywanie wielu mapowań połączeń pomiędzy ruterami. Zachowanie pojedynczego sprawdzenia trasy zgodne jest z działaniem programu tracert ze środowiska MS Windows - program wysyła komunikaty ICMP ECHO_REQUEST z kolejnymi wartościami pola TTL i oczekuje komunikatów ICMP TIME_EXCEEDED (w razie przekroczonego TTL) oraz ECHO_REPLY (po dotarciu do celu). Zlecenie wykonania zadania oraz odbiór wyników wykorzystuje połączenie z wykorzystaniem protokołu HTTP i notacji/składni JSON.
+Celem zadania jest implementacja serwera umożliwiającego współbieżne wykonywanie wielu mapowań połączeń pomiędzy ruterami. Zachowanie pojedynczego sprawdzenia trasy zgodne jest z działaniem programu tracert ze środowiska MS Windows - program wysyła komunikaty ICMP ECHO_REQUEST z kolejnymi wartościami pola TTL i oczekuje komunikatów ICMP TIME_EXCEEDED. Zlecenie wykonania zadania oraz odbiór wyników wykorzystuje połączenie z wykorzystaniem protokołu HTTP i notacji/składni JSON.
 
 Podział na moduły
 -------------
 ####Moduł 1: Kontakt poprzez protokół HTTP za pomocą JSON'ów:
-Odbiera prośby spoza serwera oraz zwraca dane.
+Odbiera prośby z poza serwera oraz zwraca dane.
 
-####Moduł 2: Traceroute:
-Wykonuj operację trasowania pakietów na żądanie modułu nr 3.
+####Moduł 2: Tracer:
+Na podstawie żądań <b>Modułu 3</b> wykonuj tracerouta (TODO: lepiej to ubrać w słowa)
 ####Moduł 3: Centrum kontroli danych:
 Obsługuje dwie kolejki żądań: od <b> modułu 1</b> i <b> modułu 2</b>(może również żądać wykonywania zadań). Na ich podstawie dokonuje parsowania danych do formy rozumianej przez konkretne moduły i przesyłania ich do bazy lub wyciągania z bazy w celu dalszej obróbki i zwrócenia żądanych danych.
 
@@ -19,68 +19,106 @@ Struktury danych
 ####JSON:
 Żądanie wykonania tracerouta:
 ```
-#TODO
+{
+	addresses: [
+		{
+			address: ip
+		},
+		{...}]`
+}
 ```
 Zwrotka z numerem zadania:
 ```
-#TODO
+{
+	task: nr
+}
 ```
 Zapytanie o dane z numeru zadania:
 ```
-#TODO
+{
+	tasks:[
+		{
+			task: nr
+		},
+		{...}]
+}
 ```
 Dane z zadania:
 ```
-#TODO
+{
+	addresses:[
+	{
+		addresses:[
+		{
+			...
+		}
+	}]
+}
 ```
 
 ####Obiekty:
 Zadanie:
 ```
-#TODO
+class Task:
+	ip[]
+	task_number
 ```
 Wynik zadania(z Modułu 2):
 ```
-#TODO
+class TaskResult:
+	task_number
+	addresses[traceroute[]]
 ```
-Numer zadania:  
+Adresy:
 ```
-#TODO
+class Addresses:
+	Address
+	Addresses[]
 ```
 Sparsowane dane:
 ```
-#TODO
+class ParsedData:
+	tasks_numbers[]
+	Addresses
 ```
 
 ####SQLite(tabele):
 Zadania:
 ```
-Nr, Data
-#TOCHECK
+TASK_NUMBER: numer zadania (pk)
+START_DATE: czas rozpoczęcia zadania (notnull)
+END_DATE: czas zakończenia zadania
 ```
 Pojedynczy wynik tracerouta:
 ```
-Id, Nr, Id-poprzednika
-#TOCHECK
+ID: id pojedynczego wyniku (pk)
+PRE_ID: id poprzednika (fk na ID)
+TASK_NUMBER: numer zadania
+IP: adres ip
 ```
 
 Szczegółowy opis działania modułów
 -------------
 ###Moduł 1
-Moduł nr 1 obsługuje komunikację między serwerem HTTP a klientem poprzez znaczniki JSON. Klient wysyła do serwera żądanie wykonania operacji "traceroute", w zamian serwer przesyła te żądanie do kolejki żądań modułu nr 1, znajdującej się w module nr 3, oraz zwraca JSOna z numerem tego zadania w kolejce. Ten numer jest nieformalnym "wskaźnikiem", do którego klient może się odwołać w celu uzyskania danych wynikowych operacji "traceroute" dla tego zadania. Ów proces odbywa się również poprzez wzajemne przesyłanie JSONów. Klient przesyła zapytanie o dane zadania o podanym wcześniej przez serwer numerze. Natomiast serwer przysyła JSONa z danymi wynikowymi.
+Moduł 1 odbiera JSON'y przesyłane od kilenta za pomocą protokołu HTTP. Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań.
+#### /doTraceroute
+Moduł odbiera JSON'a z danymi do tracerouta (struktura powyżej) przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a) a następnie umieszcza obiekt w kolejce oczekujących,
+####/getData
+Moduł odbiera JSON'a z numerem zadania. Składa żądanie do modułu 3 o dane o zadanym numerze. Jeśli w zwrocie dostaje dane to parsuje je do JSON'a którego zwraca, jeśli nie zwraca odpowiedni kod błędu
 
-Osobny wątek nasłuchuje połączeń na porcie 80 (HTTP).
+Moduł 1 działa na "jednym" samoklonującym się wątku który w sytuacji odebrania żądania tworzy swojego kolna a sam zajmuje się wykonaniem zadanego zadania.
+
 
 ###Moduł 2
 Moduł nr 2 wykonuje operację trasowania pakietów. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych. Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy). Moduł podzielony jest na trzy zasadnicze elementy - generator pakietów, wątki wywysłające pakiety oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Generator pakietów generuje pakiety o określoym TTL (Time-To-Live) i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy (czyli też wątku wysyłającego), a Sequence to TTL pakietu. Dzięki możliwości identyfikacji pakietów należących do poszczególnych tras i o konkretnych TTL, aplikacja może śledzić wiele ścieżek na raz.
 
-Moduł do łączenia się ze światem zewnętrznym wykorzystuje tzw. "raw sockets", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. 
+Moduł do łączenia się ze światem zewnętrznym wykorzystuje tzw. "raw sockets", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu.
 
 Maksymalny TTL, liczba pakietów bez informacji zwrotnej i oczekiwanie na odpowiedź to parametry konfiguracyjne, które mogą być określone w pliku XML i otagowane identyfikatorami ttl (1-255), attempts oraz timeout.
 
 Algorytm trasowania:
 
-1. Przyjmij od modułu nr 3 dane określające, jaka trasa ma być wyznaczona.
+1. Przyjmij od modułu nr 3 (kolejka) dane określające, jaka trasa ma być wyznaczona.
 
 2. Uruchom wątek wysyłający pakiety. Wątek ma przydzielony "identyfikator trasy", który zostanie wykorzystany jako pole Identifier w nagłówku ICMP.
 
@@ -91,5 +129,23 @@ Algorytm trasowania:
 5. Czekaj na informację zwrotną od wątku odbierającego zawierającą adres IP routera pośredniczącego i kod odpowiedzi. Zinterpretuj informację - być może należy zakończyć trasowanie. Jeśli nie, dodaj adres do trasy. n += 1 i wróć do punktu 3.
 
 6. Po zakończeniu trasowania wątek wysyłający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów).
-
 ###Moduł 3
+Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądania do wszystkich pozostałych modułów.
+#### Interakcja z modułem 1:
+1. Odbiór danych do tracerouta
+2. Odbiór żądania danych wynikowych:
+	a. Brak gotowych
+	b. Sparsowanie danych i przesłanie do modułu 1
+#### Interakcja z modułem 2:
+1. Wrzucenie do kolejki danych do tracerouta
+2. Odbiór z kolejki danych z tracerouta i sparsowanie ich.
+#### Interakcja z bazą danych:
+1. Dodanie nowego zadania
+2. Dodanie danych z zadania - zakończenie zadania
+3. Wyciągnięcie informacji o stanie zadania:
+	a. Nieskończone
+	b. Gotowe - parsowanie danych.
+
+Moduł będzie działał na dwóch wątkach.
+Pierwszy będzie cyklicznie sprawdzał czy w kolejkach nie ma zadań do wykonania a następnie w zależności od sytuacji wykonywał odpowiednie zadania takie jak parsowanie, zapisywanie do bazy, przesyłanie danych między kolejkami.
+Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników jako, że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym że zadanie jeszcze nie skończone lub parsował dane z bazy do wersji obiektowej i przesyłał z powrotem do modułu 1.
