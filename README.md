@@ -46,8 +46,10 @@ Zapytanie o dane z numeru zadania:
 Dane z zadania:
 ```
 {
+	address: ip,
 	addresses:[
 	{
+		address: ip,
 		addresses:[
 		{
 			...
