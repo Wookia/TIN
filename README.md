@@ -46,15 +46,17 @@ Zapytanie o dane z numeru zadania:
 Dane z zadania:
 ```
 {
-	address: ip,
-	addresses:[
+	tasks:[
 	{
-		address: ip,
-		addresses:[
+	task: nr,
+	addresses:[
 		{
-			...
-		}
-	}]
+			address: ip,
+		},
+		{...}]
+	},
+	{...}
+	]
 }
 ```
 
@@ -69,22 +71,21 @@ Wynik zadania(z Modułu 2):
 ```
 class TaskResult:
 	task_number
-	addresses[traceroute[]]
+	addresses[traceroute[]] //tablica tablic (wiele adresow ip)
 ```
 Adresy:
 ```
 class Addresses:
-	Address
-	Addresses[]
+	taks: nr
+	addresses[traceroute[]] //tablica tablic (wiele adresow ip)
 ```
 Sparsowane dane:
 ```
 class ParsedData:
-	tasks_numbers[]
-	Addresses
+	Addresses[]
 ```
 
-####SQLite(tabele):
+####SQLite(tabele): ??? zmianiamy na jakis plik tekstowy skoro nie mamy tego ładnie parsowac ???
 Zadania:
 ```
 TASK_NUMBER: numer zadania (pk)
@@ -93,16 +94,19 @@ END_DATE: czas zakończenia zadania
 ```
 Pojedynczy wynik tracerouta:
 ```
-ID: id pojedynczego wyniku (pk)
-PRE_ID: id poprzednika (fk na ID)
-TASK_NUMBER: numer zadania
-IP: adres ip
+TASK_NUMBER: numer zadania (pk)
+IP: adres ip (pk)
+```
+Relacja
+```
+PRE_IP: numer poprzedniego (pk, fk)
+NEXT_IP: numer nastepnego (pk, fk)
 ```
 
 Szczegółowy opis działania modułów
 -------------
 ###Moduł 1
-Moduł 1 odbiera JSON'y przesyłane od kilenta za pomocą protokołu HTTP. Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań.
+Moduł 1 odbiera JSON'y przesyłane od kilenta za pomocą protokołu HTTP(POST). Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań.
 #### /doTraceroute
 Moduł odbiera JSON'a z danymi do tracerouta (struktura powyżej) przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a) a następnie umieszcza obiekt w kolejce oczekujących,
 ####/getData
