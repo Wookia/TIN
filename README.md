@@ -131,7 +131,8 @@ Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbieraj
 
 ####Wątek analizujący 
 Odpowiedzialny za łączenie pakietów wysłanych z odebranymi w pary. Odpowiada też za stwierdzenie braku odpowiedzi na wysłany pakiet po przekroczeniu czasu TIMEOUT od czasu wysłania pakietu. Zwraca informacje o trasie do modułu 3.
-Algorytm trasowania:
+
+####Algorytm trasowania:
 
 1. Przyjmij od modułu nr 3 (kolejka) dane określające, jaka trasa ma być wyznaczona.
 
@@ -145,11 +146,16 @@ Algorytm trasowania:
 
 6. Po zakończeniu trasowania wątek analizujący przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów).
 
-Parametry dotyczące modułu 2:
+####Parametry dotyczące modułu 2:
+
 MAX_TTL - domyślna wartość maksymalnego czasu życia pakietu.
+
 MAX_PACKETS_PER_TTL - domyślna ilość pakietów wysyłanych do danego adresu z określoną wartościa TTL. Ze względu na brak gwarancji dostarczenia.
+
 FREQ - częstotliwość wysyłania pakietów. Część zapór ogniowych może wykryć dużą ilość pakietów ICMP i zablokować dalszy ruch.
+
 MAX_SEND_THREADS - maksymalna ilość utworzonych wątków wysyłających pakiety. 
+
 TIMEOUT - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
 Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądania do wszystkich pozostałych modułów.
