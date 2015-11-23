@@ -9,7 +9,8 @@ Podział na moduły
 Odbiera prośby z poza serwera oraz zwraca dane.
 
 ####Moduł 2: Tracer:
-Na podstawie żądań <b>Modułu 3</b> wykonuj tracerouta (TODO: lepiej to ubrać w słowa)
+Na podstawie żądań uzyskanych z <b>Modułu 3</b> buduje pakiety i na ich bazie przeprowadza traceroute. (TODO: lepiej to ubrać w słowa).
+Składa się z generatora pakietów oraz wątków wysyłających/odbierających dane.
 ####Moduł 3: Centrum kontroli danych:
 Obsługuje dwie kolejki żądań: od <b> modułu 1</b> i <b> modułu 2</b>(może również żądać wykonywania zadań). Na ich podstawie dokonuje parsowania danych do formy rozumianej przez konkretne moduły i przesyłania ich do bazy lub wyciągania z bazy w celu dalszej obróbki i zwrócenia żądanych danych.
 
@@ -116,12 +117,20 @@ Moduł 1 działa na "jednym" samoklonującym się wątku który w sytuacji odebr
 
 
 ###Moduł 2
-Moduł nr 2 wykonuje operację trasowania pakietów. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych. Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy). Moduł podzielony jest na trzy zasadnicze elementy - generator pakietów, wątki wywysłające pakiety oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Generator pakietów generuje pakiety o określoym TTL (Time-To-Live) i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy (czyli też wątku wysyłającego), a Sequence to TTL pakietu. Dzięki możliwości identyfikacji pakietów należących do poszczególnych tras i o konkretnych TTL, aplikacja może śledzić wiele ścieżek na raz.
+Moduł nr 2 wykonuje operację trasowania pakietów. Podzielony jest na trzy zasadnicze elementy - generator pakietów, wątek wywysłający pakiety(lub więcej w zależności od potrzeb) oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych. 
+Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy). 
+####Generator pakietów:
+Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy (czyli też wątku wysyłającego, oraz związany w jednoznaczny sposób z zadaniem całego programu), a Sequence to TTL pakietu. 
+Dzięki możliwości identyfikacji pakietów należących do poszczególnych tras i o konkretnych TTL, aplikacja może śledzić wiele ścieżek na raz.
 
-Moduł do łączenia się ze światem zewnętrznym wykorzystuje tzw. "raw sockets", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu.
+####Wątek wysyłający
+Przyjmuje zadania od modułu 3, wysyła zapytanie do generatora pakietów o stworzenie pakietu do wysłania, tworzy gniazdo i wysyła uzyskany pakiet. Zapisuje informację o wysłanym pakiecie, w tym czas wysłania a następnie przekazuje dane do wątku analizującego informacje.
 
-Maksymalny TTL, liczba pakietów bez informacji zwrotnej i oczekiwanie na odpowiedź to parametry konfiguracyjne, które mogą być określone w pliku XML i otagowane identyfikatorami ttl (1-255), attempts oraz timeout.
+####Wątek odbierający
+Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem będzie odbieranie wszystkich pakietów ICMP i przekazywanie informacji o nich do wątku analizującego informacje.
 
+####Wątek analizujący 
+Odpowiedzialny za łączenie pakietów wysłanych z odebranymi w pary. Odpowiada też za stwierdzenie braku odpowiedzi na wysłany pakiet po przekroczeniu czasu TIMEOUT od czasu wysłania pakietu. Zwraca informacje o trasie do modułu 3.
 Algorytm trasowania:
 
 1. Przyjmij od modułu nr 3 (kolejka) dane określające, jaka trasa ma być wyznaczona.
@@ -130,11 +139,18 @@ Algorytm trasowania:
 
 3. n = 1.
 
-4. Wygeneruj za pomocą generatora pakiet o TTL = n, Identifier = identyfikator trasy, Sequence = n, wyślij go i poinformuj wątek odbierający o konieczności rozpoczęcia odmierzania czasu przeznaczonego na odbiór pakietu. Po tym czasie wątek odbierający poinformuje wątek wysyłający, że może spróbować jeszcze raz (ale maksymalnie tyle razy, ile wynosi parametr Attempts).
+4. Wygeneruj za pomocą generatora pakiet o TTL = n, Identifier = identyfikator trasy, Sequence = n, a następnie wyślij go i poinformuj wątek analizujący o wysłanym pakiecie.
 
-5. Czekaj na informację zwrotną od wątku odbierającego zawierającą adres IP routera pośredniczącego i kod odpowiedzi. Zinterpretuj informację - być może należy zakończyć trasowanie. Jeśli nie, dodaj adres do trasy. n += 1 i wróć do punktu 3.
+5. Czekaj na informację zwrotną od wątku odbierającego zawierającą adres IP routera pośredniczącego i kod odpowiedzi. Zinterpretuj informację - być może należy zakończyć trasowanie. Jeśli nie, dodaj adres do trasy. n += 1 i wróć do punktu 4.
 
-6. Po zakończeniu trasowania wątek wysyłający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów).
+6. Po zakończeniu trasowania wątek analizujący przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów).
+
+Parametry dotyczące modułu 2:
+MAX_TTL - domyślna wartość maksymalnego czasu życia pakietu.
+MAX_PACKETS_PER_TTL - domyślna ilość pakietów wysyłanych do danego adresu z określoną wartościa TTL. Ze względu na brak gwarancji dostarczenia.
+FREQ - częstotliwość wysyłania pakietów. Część zapór ogniowych może wykryć dużą ilość pakietów ICMP i zablokować dalszy ruch.
+MAX_SEND_THREADS - maksymalna ilość utworzonych wątków wysyłających pakiety. 
+TIMEOUT - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
 Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądania do wszystkich pozostałych modułów.
 #### Interakcja z modułem 1:
