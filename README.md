@@ -1,16 +1,14 @@
 TIN
 ===================
 
-Celem zadania jest implementacja serwera umożliwiającego współbieżne wykonywanie wielu mapowań połączeń pomiędzy ruterami. Zachowanie pojedynczego sprawdzenia trasy zgodne jest z działaniem programu tracert ze środowiska MS Windows - program wysyła komunikaty ICMP ECHO_REQUEST z kolejnymi wartościami pola TTL i oczekuje komunikatów ICMP TIME_EXCEEDED. Zlecenie wykonania zadania oraz odbiór wyników wykorzystuje połączenie z wykorzystaniem protokołu HTTP i notacji/składni JSON.
+Celem zadania jest implementacja serwera umożliwiającego wykonywanie mapowań połączeń pomiędzy ruterami. Zachowanie algorytmu traceroutingu zgodne jest z działaniem programu tracert ze środowiska MS Windows - program wysyła komunikaty ICMP ECHO_REQUEST z kolejnymi wartościami pola TTL i oczekuje komunikatów ICMP TIME_EXCEEDED. Zlecenie wykonania zadania oraz odbiór wyników wykorzystuje połączenie z wykorzystaniem protokołu HTTP i notacji/składni JSON.
 
 Podział na moduły
 -------------
 ####Moduł 1: Kontakt poprzez protokół HTTP za pomocą JSON'ów:
 Odbiera prośby z poza serwera oraz zwraca dane.
-
 ####Moduł 2: Tracer:
-Na podstawie żądań uzyskanych z <b>Modułu 3</b> buduje pakiety i na ich bazie przeprowadza traceroute. (TODO: lepiej to ubrać w słowa).
-Składa się z generatora pakietów oraz wątków wysyłających/odbierających dane.
+Na podstawie żądań uzyskanych z <b>Modułu 3</b> buduje pakiety i na ich bazie wykonuje zadanie traceroutingu.
 ####Moduł 3: Centrum kontroli danych:
 Obsługuje dwie kolejki żądań: od <b> modułu 1</b> i <b> modułu 2</b>(może również żądać wykonywania zadań). Na ich podstawie dokonuje parsowania danych do formy rozumianej przez konkretne moduły i przesyłania ich do bazy lub wyciągania z bazy w celu dalszej obróbki i zwrócenia żądanych danych.
 
@@ -98,19 +96,18 @@ Szczegółowy opis działania modułów
 ###Moduł 1
 Moduł 1 odbiera JSON'y przesyłane od kilenta za pomocą protokołu HTTP(POST). Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań.
 #### /doTraceroute
-Moduł odbiera JSON'a z danymi do tracerouta (struktura powyżej) przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a) a następnie umieszcza obiekt w kolejce oczekujących,
+Moduł odbiera JSON'a z danymi do tracerouta (struktura powyżej) przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a), a następnie umieszcza obiekt w kolejce oczekujących,
 ####/getData
-Moduł odbiera JSON'a z numerem zadania. Składa żądanie do modułu 3 o dane o zadanym numerze. Jeśli w zwrocie dostaje dane to parsuje je do JSON'a którego zwraca, jeśli nie zwraca odpowiedni kod błędu
+Moduł odbiera JSON'a z numerem zadania. Składa żądanie do modułu 3 o dane o zadanym numerze. Jeśli w zwrocie dostaje dane, to parsuje je do JSON'a którego zwraca. Jeśli nie, zwraca odpowiedni kod błędu
 
-Moduł 1 działa na "jednym" samoklonującym się wątku który w sytuacji odebrania żądania tworzy swojego kolna a sam zajmuje się wykonaniem zadanego zadania.
+Moduł 1 działa na "jednym" samoklonującym się wątku który w sytuacji odebrania żądania tworzy swojego klona, a sam zajmuje się wykonaniem zadanego zadania.
 
 
 ###Moduł 2
 Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na trzy zasadnicze elementy - generator pakietów (działający w wątku wysyłającym), wątek wysysłający pakiety(lub więcej w zależności od potrzeb) oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
 Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy).
 ####Generator pakietów:
-Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie obiekt klasy Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy (czyli też wątku wysyłającego, oraz związany w jednoznaczny sposób z zadaniem całego programu), a Sequence to TTL pakietu.
-Dzięki możliwości identyfikacji pakietów należących do poszczególnych tras i o konkretnych TTL, aplikacja może śledzić wiele ścieżek na raz.
+Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie obiekt klasy Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy, a Sequence to TTL pakietu.
 
 ####Wątek wysyłający
 Przyjmuje zadania od modułu 3, generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Zapisuje informację o wysłanym pakiecie (w tym czas wysłania) do kolejki, z której odbierze tę strukturę wątek odbierający. 
@@ -122,6 +119,7 @@ Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbieraj
 Kolejka std::queue zabezpieczona semaforem przechowująca struktury z adresami do traceroutingu (Moduł 2 <-- Moduł 3).
 Kolejka std::queue zabezpieczona semaforem przechowująca wyznaczone trasy (Moduł 2 --> Moduł 3).
 Sygnał SIGUSR2 nadawany przez Moduł 3, pobudzający do działania wątki Modułu 2.
+Sygnał SIGUSR2 nadawany przez Moduł 2 po wykonaniu zadania traceroutingu informujący Moduł 3 o danych w kolejce wynikowej.
 
 ####Synchronizacja pomiędzy wątkami odbierającym i wysyłającym
 Wątki współdzielą kolejkę typu std::queue zabezpieczoną semaforem przeznaczoną do dostarczania wiedzy do wątku odbierającego o wysłanych pakietach. Kolejka ta przechowuje struktury zawierające kompletny pakiet oraz wyodrębione najważniejsze informacje na jego temat - wartości pól Identifier, Sequence i czas wysłania.
