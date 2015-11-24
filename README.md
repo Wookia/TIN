@@ -86,22 +86,11 @@ class ParsedData:
 	Addresses[]
 ```
 
-####SQLite(tabele): ??? zmianiamy na jakis plik tekstowy skoro nie mamy tego ładnie parsowac ???
+####System plików
 Zadania:
 ```
-TASK_NUMBER: numer zadania (pk)
-START_DATE: czas rozpoczęcia zadania (notnull)
-END_DATE: czas zakończenia zadania
-```
-Pojedynczy wynik tracerouta:
-```
-TASK_NUMBER: numer zadania (pk)
-IP: adres ip (pk)
-```
-Relacja
-```
-PRE_IP: numer poprzedniego (pk, fk)
-NEXT_IP: numer nastepnego (pk, fk)
+Nazwa: nr zadania
+Treść: ip; ip; ip; ip; ip;\n ip; ip; ip; \n ip; ip; ip; ip; \n ...
 ```
 
 Szczegółowy opis działania modułów
@@ -117,10 +106,10 @@ Moduł 1 działa na "jednym" samoklonującym się wątku który w sytuacji odebr
 
 
 ###Moduł 2
-Moduł nr 2 wykonuje operację trasowania pakietów. Podzielony jest na trzy zasadnicze elementy - generator pakietów, wątek wywysłający pakiety(lub więcej w zależności od potrzeb) oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych. 
-Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy). 
+Moduł nr 2 wykonuje operację trasowania pakietów. Podzielony jest na trzy zasadnicze elementy - generator pakietów, wątek wywysłający pakiety(lub więcej w zależności od potrzeb) oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
+Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy).
 ####Generator pakietów:
-Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy (czyli też wątku wysyłającego, oraz związany w jednoznaczny sposób z zadaniem całego programu), a Sequence to TTL pakietu. 
+Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy (czyli też wątku wysyłającego, oraz związany w jednoznaczny sposób z zadaniem całego programu), a Sequence to TTL pakietu.
 Dzięki możliwości identyfikacji pakietów należących do poszczególnych tras i o konkretnych TTL, aplikacja może śledzić wiele ścieżek na raz.
 
 ####Wątek wysyłający
@@ -129,7 +118,7 @@ Przyjmuje zadania od modułu 3, wysyła zapytanie do generatora pakietów o stwo
 ####Wątek odbierający
 Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem będzie odbieranie wszystkich pakietów ICMP i przekazywanie informacji o nich do wątku analizującego informacje.
 
-####Wątek analizujący 
+####Wątek analizujący
 Odpowiedzialny za łączenie pakietów wysłanych z odebranymi w pary. Odpowiada też za stwierdzenie braku odpowiedzi na wysłany pakiet po przekroczeniu czasu TIMEOUT od czasu wysłania pakietu. Zwraca informacje o trasie do modułu 3.
 
 ####Algorytm trasowania:
@@ -154,7 +143,7 @@ MAX_PACKETS_PER_TTL - domyślna ilość pakietów wysyłanych do danego adresu z
 
 FREQ - częstotliwość wysyłania pakietów. Część zapór ogniowych może wykryć dużą ilość pakietów ICMP i zablokować dalszy ruch.
 
-MAX_SEND_THREADS - maksymalna ilość utworzonych wątków wysyłających pakiety. 
+MAX_SEND_THREADS - maksymalna ilość utworzonych wątków wysyłających pakiety.
 
 TIMEOUT - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
@@ -167,13 +156,13 @@ Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądani
 #### Interakcja z modułem 2:
 1. Wrzucenie do kolejki danych do tracerouta
 2. Odbiór z kolejki danych z tracerouta i sparsowanie ich.
-#### Interakcja z bazą danych:
-1. Dodanie nowego zadania
-2. Dodanie danych z zadania - zakończenie zadania
+#### Interakcja z systemem plików:
+1. Dodanie nowego zadania (utwórz plik z dopiskiem ze niegotowy)
+2. Dodanie danych z zadania (otworzenie, zapis)
 3. Wyciągnięcie informacji o stanie zadania:
 	a. Nieskończone
 	b. Gotowe - parsowanie danych.
 
 Moduł będzie działał na dwóch wątkach.
-Pierwszy będzie cyklicznie sprawdzał czy w kolejkach nie ma zadań do wykonania a następnie w zależności od sytuacji wykonywał odpowiednie zadania takie jak parsowanie, zapisywanie do bazy, przesyłanie danych między kolejkami.
-Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników jako, że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym że zadanie jeszcze nie skończone lub parsował dane z bazy do wersji obiektowej i przesyłał z powrotem do modułu 1.
+Pierwszy będzie cyklicznie sprawdzał czy w kolejkach nie ma zadań do wykonania a następnie w zależności od sytuacji wykonywał odpowiednie zadania takie jak parsowanie, zapisywanie do plików, przesyłanie danych między kolejkami.
+Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników jako, że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym że zadanie jeszcze nie skończone lub parsował dane z plików do wersji obiektowej i przesyłał z powrotem do modułu 1..
