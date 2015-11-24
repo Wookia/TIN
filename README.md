@@ -106,44 +106,49 @@ Moduł 1 działa na "jednym" samoklonującym się wątku który w sytuacji odebr
 
 
 ###Moduł 2
-Moduł nr 2 wykonuje operację trasowania pakietów. Podzielony jest na trzy zasadnicze elementy - generator pakietów, wątek wywysłający pakiety(lub więcej w zależności od potrzeb) oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
+Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na trzy zasadnicze elementy - generator pakietów (działający w wątku wysyłającym), wątek wysysłający pakiety(lub więcej w zależności od potrzeb) oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
 Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy).
 ####Generator pakietów:
-Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy (czyli też wątku wysyłającego, oraz związany w jednoznaczny sposób z zadaniem całego programu), a Sequence to TTL pakietu.
+Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie obiekt klasy Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy (czyli też wątku wysyłającego, oraz związany w jednoznaczny sposób z zadaniem całego programu), a Sequence to TTL pakietu.
 Dzięki możliwości identyfikacji pakietów należących do poszczególnych tras i o konkretnych TTL, aplikacja może śledzić wiele ścieżek na raz.
 
 ####Wątek wysyłający
-Przyjmuje zadania od modułu 3, wysyła zapytanie do generatora pakietów o stworzenie pakietu do wysłania, tworzy gniazdo i wysyła uzyskany pakiet. Zapisuje informację o wysłanym pakiecie, w tym czas wysłania a następnie przekazuje dane do wątku analizującego informacje.
+Przyjmuje zadania od modułu 3, generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Zapisuje informację o wysłanym pakiecie (w tym czas wysłania) do kolejki, z której odbierze tę strukturę wątek odbierający. 
 
 ####Wątek odbierający
-Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem będzie odbieranie wszystkich pakietów ICMP i przekazywanie informacji o nich do wątku analizującego informacje.
+Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem będzie odbieranie wszystkich pakietów ICMP i ich interpretacja (możemy np. otrzymać pakiet zupełnie niezwiązany z zadaniem). 
 
-####Wątek analizujący
-Odpowiedzialny za łączenie pakietów wysłanych z odebranymi w pary. Odpowiada też za stwierdzenie braku odpowiedzi na wysłany pakiet po przekroczeniu czasu TIMEOUT od czasu wysłania pakietu. Zwraca informacje o trasie do modułu 3.
+####Komunikacja z Modułem 3
+Kolejka std::queue zabezpieczona semaforem przechowująca struktury z adresami do traceroutingu (Moduł 2 <-- Moduł 3).
+Kolejka std::queue zabezpieczona semaforem przechowująca wyznaczone trasy (Moduł 2 --> Moduł 3).
+Sygnał SIGUSR2 nadawany przez Moduł 3, pobudzający do działania wątki Modułu 2.
 
-####Algorytm trasowania:
+####Synchronizacja pomiędzy wątkami odbierającym i wysyłającym
+Wątki współdzielą kolejkę typu std::queue zabezpieczoną semaforem przeznaczoną do dostarczania wiedzy do wątku odbierającego o wysłanych pakietach. Kolejka ta przechowuje struktury zawierające kompletny pakiet oraz wyodrębione najważniejsze informacje na jego temat - wartości pól Identifier, Sequence i czas wysłania.
+Sygnał SIGUSR1 to polecenie "kontynuuj wysyłanie pakietów" wydawane wątkowi wysyłającemu przez wątek odbierający po odebraniu pakietu zidentyfikowanego jako odpowiedź na pakiet wysłany pobrany z kolejki.
+Aby uniknąć aktywnego oczekiwania na komunikaty (np. "zawieszając" się na zmiennej współdzielonej), wątki odbierają sygnały poprzez wykorzystanie funkcji pselect(), która poza korzystaniem ze standardowych deskryptorów gniazd, powiadamia również w razie wystąpienia jednego z sygnałów.
 
-1. Przyjmij od modułu nr 3 (kolejka) dane określające, jaka trasa ma być wyznaczona.
+####Algorytm traceroute:
 
-2. Uruchom wątek wysyłający pakiety. Wątek ma przydzielony "identyfikator trasy", który zostanie wykorzystany jako pole Identifier w nagłówku ICMP.
+1. Wątek wysyłający przyjmuje od modułu nr 3 dane określające, jaka trasa ma być wyznaczona.
 
-3. n = 1.
+2. n = 1.
 
-4. Wygeneruj za pomocą generatora pakiet o TTL = n, Identifier = identyfikator trasy, Sequence = n, a następnie wyślij go i poinformuj wątek analizujący o wysłanym pakiecie.
+3. Wygeneruj za pomocą generatora pakiet o TTL = n, Identifier = numer zadania, Sequence = n, a następnie wyślij je i poinformuj wątek odbierający o wysłanych pakietach poprzez wstawienie pierwszego z nich i jego najważniejszych danych do współdzielonej kolejki.
 
-5. Czekaj na informację zwrotną od wątku odbierającego zawierającą adres IP routera pośredniczącego i kod odpowiedzi. Zinterpretuj informację - być może należy zakończyć trasowanie. Jeśli nie, dodaj adres do trasy. n += 1 i wróć do punktu 4.
+4. Czekaj na sygnał od wątku odbierającego (funkcja pselect() o określonej wartości timeout powodującej automatyczne przejście do następnego zadania). Jeśli mamy kontynuować wysyłanie pakietów, n += 1 i wróć do punktu 4.
 
-6. Po zakończeniu trasowania wątek analizujący przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów).
+5. Po zakończeniu traceroutingu wątek odbierający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów). Jeśli w kolejce są kolejne trasy do wyznaczania, rozpoczynamy pracę.
 
 ####Parametry dotyczące modułu 2:
+
+Parametry przechowywane są w standardowym tekstowym pliku konfiguracyjnym Module2.conf - jeden parametr odpowiadający jednej linii pliku.
 
 MAX_TTL - domyślna wartość maksymalnego czasu życia pakietu.
 
 MAX_PACKETS_PER_TTL - domyślna ilość pakietów wysyłanych do danego adresu z określoną wartościa TTL. Ze względu na brak gwarancji dostarczenia.
 
 FREQ - częstotliwość wysyłania pakietów. Część zapór ogniowych może wykryć dużą ilość pakietów ICMP i zablokować dalszy ruch.
-
-MAX_SEND_THREADS - maksymalna ilość utworzonych wątków wysyłających pakiety.
 
 TIMEOUT - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
@@ -154,7 +159,7 @@ Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądani
 	a. Brak gotowych
 	b. Sparsowanie danych i przesłanie do modułu 1
 #### Interakcja z modułem 2:
-1. Wrzucenie do kolejki danych do tracerouta
+1. Wstawienie do kolejki danych do tracerouta
 2. Odbiór z kolejki danych z tracerouta i sparsowanie ich.
 #### Interakcja z systemem plików:
 1. Dodanie nowego zadania (utwórz plik z dopiskiem ze niegotowy)
@@ -165,4 +170,4 @@ Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądani
 
 Moduł będzie działał na dwóch wątkach.
 Pierwszy będzie cyklicznie sprawdzał czy w kolejkach nie ma zadań do wykonania a następnie w zależności od sytuacji wykonywał odpowiednie zadania takie jak parsowanie, zapisywanie do plików, przesyłanie danych między kolejkami.
-Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników jako, że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym że zadanie jeszcze nie skończone lub parsował dane z plików do wersji obiektowej i przesyłał z powrotem do modułu 1..
+Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników, jako że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym że zadanie jeszcze nie skończone lub parsował dane z plików do wersji obiektowej i przesyłał z powrotem do modułu 1..
