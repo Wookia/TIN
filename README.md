@@ -104,7 +104,7 @@ Moduł 1 działa na "jednym" samoklonującym się wątku który w sytuacji odebr
 
 
 ###Moduł 2
-Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na trzy zasadnicze elementy - generator pakietów (działający w wątku wysyłającym), wątek wysysłający pakiety(lub więcej w zależności od potrzeb) oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
+Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na trzy zasadnicze elementy - generator pakietów (działający w wątku wysyłającym), wątek wysyłający pakiety oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
 Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy).
 ####Generator pakietów:
 Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie obiekt klasy Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy, a Sequence to TTL pakietu.
