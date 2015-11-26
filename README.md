@@ -13,21 +13,21 @@ Na podstawie żądań uzyskanych z <b>Modułu 3.</b> buduje pakiety i na ich baz
 Obsługuje dwie kolejki żądań: od <b> Modułu 1.</b> i <b> Modułu 2.</b> (może również żądać wykonywania zadań). Na ich podstawie dokonuje parsowania danych do formy rozumianej przez konkretne moduły i przesyłania ich do bazy lub wyciągania z bazy w celu dalszej obróbki i zwrócenia żądanych danych.
 
 ```sequence
-World->Moduł 1: JSON(prośba o traceroute)
-Moduł 1->World: JSON(nr. zad)
+Świat->Moduł 1: JSON(prośba o traceroute)
+Moduł 1->Świat: JSON(nr. zad)
 Moduł 1-->Moduł 3: Object(adresy IP + nr. zad)
-Moduł 3-->SQLite: Object(Numer zadania)
+Moduł 3-->Plik: Create(Name: nr. zad)
 Moduł 3-->Moduł 2: Object(adresy IP + nr. zad)
 Moduł 2-->Moduł 3: Object(Wynik tracerouta + nr. zad)
 Moduł 3->Moduł 3: Parsowanie danych
-Moduł 3-->SQLite: SQL(Sprasowane dane z tracerouta)
-World->Moduł 1: JSON(nr. zad)
+Moduł 3-->Plik: Save(Name: nr. zad; Data: dane z tracerouta)
+Świat->Moduł 1: JSON(nr. zad)
 Moduł 1->Moduł 3: Object(nr. zad)
-Moduł 3->SQLite: SQL(numer zadania)
-SQLite->Moduł 3: Data(dane z tracerouta)
+Moduł 3->Plik: Open(Nazwa: nr. zad)
+Plik->Moduł 3: GetData(Data:dane z tracerouta)
 Moduł 3->Moduł 3: Parsowanie danych
 Moduł 3->Moduł 1: Object("dane sparsowane")
-Moduł 1->World: JSON(dane)
+Moduł 1->Świat: JSON(dane)
 ```
 
 Struktury danych
@@ -139,10 +139,10 @@ Nagłówek ICMP oraz dane będą budowane ręcznie w następujący sposób:
 Dane: 64 bajty zer.
 
 ####Wątek wysyłający
-Przyjmuje zadania od Modułu 3., generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Zapisuje informacje o wysłanym pakiecie (w tym czas wysłania) do kolejki, z której odbierze tę strukturę wątek odbierający. 
+Przyjmuje zadania od Modułu 3., generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Zapisuje informacje o wysłanym pakiecie (w tym czas wysłania) do kolejki, z której odbierze tę strukturę wątek odbierający.
 
 ####Wątek odbierający
-Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem będzie odbieranie wszystkich pakietów ICMP i ich interpretacja (możemy np. otrzymać pakiet zupełnie niezwiązany z zadaniem). 
+Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem będzie odbieranie wszystkich pakietów ICMP i ich interpretacja (możemy np. otrzymać pakiet zupełnie niezwiązany z zadaniem).
 
 ####Komunikacja z Modułem 3.
 Kolejka std::queue zabezpieczona semaforem, przechowująca struktury z adresami do traceroutingu (Moduł 2. <-- Moduł 3.).
@@ -185,7 +185,7 @@ Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądani
 2. Odbiór żądania danych wynikowych:
 	a. Brak gotowych.
 	b. Sparsowanie danych i przesłanie do Modułu 1.
-	
+
 ####Interakcja z Modułem 2.:
 1. Wstawienie do kolejki danych do tracerouta.
 2. Nadanie sygnału SIGUSR2 do Modułu 2. w celu pobudzenia wątków tego modułu.
@@ -201,4 +201,4 @@ Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądani
 
 Moduł będzie działał na dwóch wątkach.
 Pierwszy będzie cyklicznie sprawdzał, czy w kolejkach nie ma zadań do wykonania, a następnie w zależności od sytuacji wykonywał odpowiednie zadania, takie jak: parsowanie, zapisywanie do plików czy przesyłanie danych między kolejkami.
-Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników, jako że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym, że zadanie jest jeszcze nie skończone lub parsował dane z plików do wersji obiektowej i przesyłał z powrotem do Modułu 1..
+Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników, jako że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym, że zadanie jest jeszcze nie skończone lub parsował dane z plików do wersji obiektowej i przesyłał z powrotem do Modułu 1.
