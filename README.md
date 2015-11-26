@@ -127,6 +127,18 @@ Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejn
 ####Generator pakietów:
 Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie obiekt klasy Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy, a Sequence to TTL pakietu.
 
+Budowa pakietu ICMP Echo:
+Nagłowek protokolu IP bedzie budowany automatycznie wykorzystujac flage IP_HDRINCL API raw socket.
+Naglowek ICMP oraz dane beda budowane recznie w nastepujacy sposob
+
+Typ - typ wysylanego komunikatu ICMP w naszym przypadku 08 - Echo request(1 bajt)
+Kod - podtyp wiadomosci, program nasladujac MS Windows wpisuje kod 00 (1 bajt)
+Suma kontrolna - wyliczana na podstawie naglowka pakietu ICMP oraz danych (2 bajty)
+Identyfikator - reprezentujacy numer zadania, używany do identyfikacji odpowiadajcych pakietów (2 bajty)
+Numer sekwencji - reprezentujacy TTL, jak identyfikator używany do identyfikacji odpowiadajcych pakietów (2 bajty)
+
+Dane - 64 bajty zer.
+
 ####Wątek wysyłający
 Przyjmuje zadania od Modułu 3., generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Zapisuje informacje o wysłanym pakiecie (w tym czas wysłania) do kolejki, z której odbierze tę strukturę wątek odbierający. 
 
