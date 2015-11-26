@@ -116,10 +116,10 @@ Przyjmuje zadania od Modułu 3., generuje za pomocą Generatora pakiety do wysł
 Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem będzie odbieranie wszystkich pakietów ICMP i ich interpretacja (możemy np. otrzymać pakiet zupełnie niezwiązany z zadaniem). 
 
 ####Komunikacja z Modułem 3.
-Kolejka std::queue zabezpieczona semaforem, przechowująca struktury z adresami do traceroutingu (Moduł 2 <-- Moduł 3).
-Kolejka std::queue zabezpieczona semaforem, przechowująca wyznaczone trasy (Moduł 2 --> Moduł 3).
+Kolejka std::queue zabezpieczona semaforem, przechowująca struktury z adresami do traceroutingu (Moduł 2. <-- Moduł 3.).
+Kolejka std::queue zabezpieczona semaforem, przechowująca wyznaczone trasy (Moduł 2. --> Moduł 3.).
 Sygnał SIGUSR2 nadawany przez Moduł 3., pobudzający do działania wątki Modułu 2.
-Sygnał SIGUSR2 nadawany przez Moduł 2. po wykonaniu zadania traceroutingu, informujący Moduł 3 o danych w kolejce wynikowej.
+Sygnał SIGUSR2 nadawany przez Moduł 2. po wykonaniu zadania traceroutingu, informujący Moduł 3. o danych w kolejce wynikowej.
 
 ####Synchronizacja pomiędzy wątkami odbierającym i wysyłającym
 Wątki współdzielą kolejkę typu std::queue, zabezpieczoną semaforem, przeznaczoną do dostarczania wiedzy do wątku odbierającego o wysłanych pakietach. Kolejka ta przechowuje struktury zawierające kompletny pakiet oraz wyodrębione najważniejsze informacje na jego temat: wartości pól Identifier, Sequence i czas wysłania.
@@ -138,7 +138,7 @@ Aby uniknąć aktywnego oczekiwania na komunikaty (np. "zawieszając" się na zm
 
 5. Po zakończeniu traceroutingu wątek odbierający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów). Jeśli w kolejce są kolejne trasy do wyznaczania, rozpoczynamy pracę.
 
-####Parametry dotyczące modułu 2:
+####Parametry dotyczące Modułu 2.:
 
 Parametry przechowywane są w standardowym tekstowym pliku konfiguracyjnym Module2.conf - jeden parametr odpowiadający jednej linii pliku.
 
@@ -151,12 +151,12 @@ FREQ - częstotliwość wysyłania pakietów. Część zapór ogniowych może wy
 TIMEOUT - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
 Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądania do wszystkich pozostałych modułów.
-#### Interakcja z modułem 1:
+#### Interakcja z Modułem 1.:
 1. Odbiór danych do tracerouta.
 2. Odbiór żądania danych wynikowych:
 	a. Brak gotowych.
 	b. Sparsowanie danych i przesłanie do Modułu 1.
-#### Interakcja z modułem 2:
+#### Interakcja z Modułem 2.:
 1. Wstawienie do kolejki danych do tracerouta.
 2. Nadanie sygnału SIGUSR2 do Modułu 2. w celu pobudzenia wątków tego modułu.
 3. Odebranie sygnału SIGUSR2 przez odpowiedni wątek od Modułu 2., informującego o danych z tracerouta.
