@@ -12,6 +12,24 @@ Na podstawie żądań uzyskanych z <b>Modułu 3.</b> buduje pakiety i na ich baz
 ####Moduł 3: Centrum kontroli danych:
 Obsługuje dwie kolejki żądań: od <b> Modułu 1.</b> i <b> Modułu 2.</b> (może również żądać wykonywania zadań). Na ich podstawie dokonuje parsowania danych do formy rozumianej przez konkretne moduły i przesyłania ich do bazy lub wyciągania z bazy w celu dalszej obróbki i zwrócenia żądanych danych.
 
+```sequence
+World->Moduł 1: JSON(prośba o traceroute)
+Moduł 1->World: JSON(nr. zad)
+Moduł 1-->Moduł 3: Object(adresy IP + nr. zad)
+Moduł 3-->SQLite: Object(Numer zadania)
+Moduł 3-->Moduł 2: Object(adresy IP + nr. zad)
+Moduł 2-->Moduł 3: Object(Wynik tracerouta + nr. zad)
+Moduł 3->Moduł 3: Parsowanie danych
+Moduł 3-->SQLite: SQL(Sprasowane dane z tracerouta)
+World->Moduł 1: JSON(nr. zad)
+Moduł 1->Moduł 3: Object(nr. zad)
+Moduł 3->SQLite: SQL(numer zadania)
+SQLite->Moduł 3: Data(dane z tracerouta)
+Moduł 3->Moduł 3: Parsowanie danych
+Moduł 3->Moduł 1: Object("dane sparsowane")
+Moduł 1->World: JSON(dane)
+```
+
 Struktury danych
 -------------
 
@@ -151,17 +169,19 @@ FREQ - częstotliwość wysyłania pakietów. Część zapór ogniowych może wy
 TIMEOUT - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
 Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądania do wszystkich pozostałych modułów.
-#### Interakcja z Modułem 1.:
+####Interakcja z Modułem 1.:
 1. Odbiór danych do tracerouta.
 2. Odbiór żądania danych wynikowych:
 	a. Brak gotowych.
 	b. Sparsowanie danych i przesłanie do Modułu 1.
-#### Interakcja z Modułem 2.:
+	
+####Interakcja z Modułem 2.:
 1. Wstawienie do kolejki danych do tracerouta.
 2. Nadanie sygnału SIGUSR2 do Modułu 2. w celu pobudzenia wątków tego modułu.
 3. Odebranie sygnału SIGUSR2 przez odpowiedni wątek od Modułu 2., informującego o danych z tracerouta.
 4. Odbiór z kolejki danych z tracerouta i sparsowanie ich.
-#### Interakcja z systemem plików:
+
+####Interakcja z systemem plików:
 1. Dodanie nowego zadania (utwórz plik z dopiskiem ze niegotowy).
 2. Dodanie danych z zadania (otworzenie, zapis).
 3. Wyciągnięcie informacji o stanie zadania:
