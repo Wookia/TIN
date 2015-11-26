@@ -9,6 +9,11 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include "errno.h"
+#include <iostream>
+
+///TODO: most likely need to set sigprocmask in one place only!
+
+using namespace std;
 
 pthread_t sendingThread, receivingThread;
 sigset_t outselect, inselect;
@@ -26,11 +31,11 @@ void secondHandler(int signo)
 void* sender(void *argument)
 {
 	//blokujemy SIGTERMa
-    sigemptyset(&inselect);
-    sigaddset(&inselect, SIGUSR1);
-    sigaddset(&outselect, SIGUSR2);
-    sigprocmask(SIG_BLOCK, &outselect, NULL);
-    sigprocmask(SIG_BLOCK, &inselect, NULL);
+    //~ sigemptyset(&inselect);
+    //~ sigaddset(&inselect, SIGUSR1);
+    //~ sigaddset(&outselect, SIGUSR2);
+    //~ sigprocmask(SIG_BLOCK, &outselect, NULL);
+    //~ sigprocmask(SIG_BLOCK, &inselect, NULL);
 	
    /*
    for(int i = 0; i <= 3; i++)
@@ -45,10 +50,14 @@ void* sender(void *argument)
    FD_SET(0, &set);
    
    struct timespec asd;
-   asd.tv_sec = 5;
+   asd.tv_sec = 20;
    asd.tv_nsec = 0;
    
-   sleep(1);
+   sleep(30);
+   for(int i =0;i<0xffffff; i++) 
+   {
+		;
+   }
    errno = 0;
    printf("Przed pselect()\n");
    pselect(1, &set, NULL, NULL, &asd, &outselect);
@@ -74,17 +83,29 @@ void* sender(void *argument)
 
 void* receiver(void *argument)
 {
-	//blokujemy SIGTERMa
-    sigemptyset(&inselect);
-    sigaddset(&inselect, SIGUSR1);
-    //sigaddset(&newset, SIGUSR2);
-    sigaddset(&outselect, SIGUSR2);
-    sigprocmask(SIG_BLOCK, &inselect, &outselect);
-	
+	//~ //blokujemy SIGTERMa
+    //~ sigemptyset(&inselect);
+    //~ sigaddset(&inselect, SIGUSR1);
+    //~ //sigaddset(&newset, SIGUSR2);
+    //~ sigaddset(&outselect, SIGUSR2);
+    //~ sigprocmask(SIG_BLOCK, &inselect, NULL);
+	//~ 
 	float time = 2.5;
 	//usleep(time*1000000);
+	//sleep(5);
+	cout << "Wyslanie sygnalu 1" << endl;
+	//~ for(int i = 0; i<1000;i++)
+	//~ {
+	//~ pthread_kill(sendingThread,SIGUSR2);
+	//~ }
+	pthread_kill(sendingThread,SIGUSR1);
+	//~ for(int i = 0; i<1000;i++)
+	//~ {
+	//~ pthread_kill(sendingThread,SIGUSR2);
+	//~ }
+	sleep(3);
+	cout << "Wyslanie sygnalu 2" << endl;
 	pthread_kill(sendingThread,SIGUSR2);
-	//pthread_kill(sendingThread,SIGUSR1);
 	return NULL;
 }
 
@@ -108,7 +129,7 @@ int main()
     sigaddset(&inselect, SIGUSR1);
     //sigaddset(&newset, SIGUSR2);
     sigaddset(&outselect, SIGUSR2);
-    sigprocmask(SIG_BLOCK, &inselect, &outselect);
+    sigprocmask(SIG_BLOCK, &inselect, NULL);
     
 	printf("Tu bedzie sender:\n");
 	pthread_create(&sendingThread, NULL, sender, NULL);
