@@ -1,16 +1,16 @@
 TIN
 ===================
 
-Celem zadania jest implementacja serwera umożliwiającego wykonywanie mapowań połączeń pomiędzy ruterami. Zachowanie algorytmu traceroutingu zgodne jest z działaniem programu tracert ze środowiska MS Windows - program wysyła komunikaty ICMP ECHO_REQUEST z kolejnymi wartościami pola TTL i oczekuje komunikatów ICMP TIME_EXCEEDED. Zlecenie wykonania zadania oraz odbiór wyników wykorzystuje połączenie z wykorzystaniem protokołu HTTP i notacji/składni JSON.
+Celem zadania jest implementacja serwera, umożliwiającego wykonywanie mapowań połączeń pomiędzy ruterami. Zachowanie algorytmu traceroutingu zgodne jest z działaniem programu tracert ze środowiska MS Windows - program wysyła komunikaty ICMP ECHO_REQUEST z kolejnymi wartościami pola TTL i oczekuje komunikatów ICMP TIME_EXCEEDED. Zlecenie wykonania zadania oraz odbiór wyników wykorzystuje połączenie z wykorzystaniem protokołu HTTP i notacji/składni JSON.
 
 Podział na moduły
 -------------
 ####Moduł 1: Kontakt poprzez protokół HTTP za pomocą JSON'ów:
-Odbiera prośby z poza serwera oraz zwraca dane.
+Odbiera prośby spoza serwera oraz zwraca dane.
 ####Moduł 2: Tracer:
-Na podstawie żądań uzyskanych z <b>Modułu 3</b> buduje pakiety i na ich bazie wykonuje zadanie traceroutingu.
+Na podstawie żądań uzyskanych z <b>Modułu 3.</b> buduje pakiety i na ich bazie wykonuje zadanie traceroutingu.
 ####Moduł 3: Centrum kontroli danych:
-Obsługuje dwie kolejki żądań: od <b> modułu 1</b> i <b> modułu 2</b>(może również żądać wykonywania zadań). Na ich podstawie dokonuje parsowania danych do formy rozumianej przez konkretne moduły i przesyłania ich do bazy lub wyciągania z bazy w celu dalszej obróbki i zwrócenia żądanych danych.
+Obsługuje dwie kolejki żądań: od <b> Modułu 1.</b> i <b> Modułu 2.</b> (może również żądać wykonywania zadań). Na ich podstawie dokonuje parsowania danych do formy rozumianej przez konkretne moduły i przesyłania ich do bazy lub wyciągania z bazy w celu dalszej obróbki i zwrócenia żądanych danych.
 
 Struktury danych
 -------------
@@ -94,47 +94,47 @@ Treść: ip; ip; ip; ip; ip;\n ip; ip; ip; \n ip; ip; ip; ip; \n ...
 Szczegółowy opis działania modułów
 -------------
 ###Moduł 1
-Moduł 1 odbiera JSON'y przesyłane od kilenta za pomocą protokołu HTTP(POST). Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań.
+Moduł 1 odbiera JSON'y, przesyłane od kilenta za pomocą protokołu HTTP(POST). Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań.
 #### /doTraceroute
-Moduł odbiera JSON'a z danymi do tracerouta (struktura powyżej) przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a), a następnie umieszcza obiekt w kolejce oczekujących,
+Moduł odbiera JSON'a z danymi do tracerouta (struktura powyżej), przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a), a następnie umieszcza obiekt w kolejce oczekujących.
 ####/getData
-Moduł odbiera JSON'a z numerem zadania. Składa żądanie do modułu 3 o dane o zadanym numerze. Jeśli w zwrocie dostaje dane, to parsuje je do JSON'a którego zwraca. Jeśli nie, zwraca odpowiedni kod błędu
+Moduł odbiera JSON'a z numerem zadania. Składa żądanie do Modułu 3. o dane o zadanym numerze. Jeśli w zwrocie dostaje dane, to parsuje je do JSON'a którego zwraca. Jeśli nie, zwraca odpowiedni kod błędu.
 
-Moduł 1 działa na "jednym" samoklonującym się wątku który w sytuacji odebrania żądania tworzy swojego klona, a sam zajmuje się wykonaniem zadanego zadania.
+Moduł 1 działa na "jednym" samoklonującym się wątku, który w sytuacji odebrania żądania tworzy swojego klona, a sam zajmuje się wykonaniem zadanego zadania.
 
 
 ###Moduł 2
-Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na trzy zasadnicze elementy - generator pakietów (działający w wątku wysyłającym), wątek wysyłający pakiety oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
+Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na trzy zasadnicze elementy: generator pakietów (działający w wątku wysyłającym), wątek wysyłający pakiety oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
 Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy).
 ####Generator pakietów:
 Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie obiekt klasy Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy, a Sequence to TTL pakietu.
 
 ####Wątek wysyłający
-Przyjmuje zadania od modułu 3, generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Zapisuje informację o wysłanym pakiecie (w tym czas wysłania) do kolejki, z której odbierze tę strukturę wątek odbierający. 
+Przyjmuje zadania od Modułu 3., generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Zapisuje informacje o wysłanym pakiecie (w tym czas wysłania) do kolejki, z której odbierze tę strukturę wątek odbierający. 
 
 ####Wątek odbierający
 Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem będzie odbieranie wszystkich pakietów ICMP i ich interpretacja (możemy np. otrzymać pakiet zupełnie niezwiązany z zadaniem). 
 
-####Komunikacja z Modułem 3
-Kolejka std::queue zabezpieczona semaforem przechowująca struktury z adresami do traceroutingu (Moduł 2 <-- Moduł 3).
-Kolejka std::queue zabezpieczona semaforem przechowująca wyznaczone trasy (Moduł 2 --> Moduł 3).
-Sygnał SIGUSR2 nadawany przez Moduł 3, pobudzający do działania wątki Modułu 2.
-Sygnał SIGUSR2 nadawany przez Moduł 2 po wykonaniu zadania traceroutingu informujący Moduł 3 o danych w kolejce wynikowej.
+####Komunikacja z Modułem 3.
+Kolejka std::queue zabezpieczona semaforem, przechowująca struktury z adresami do traceroutingu (Moduł 2 <-- Moduł 3).
+Kolejka std::queue zabezpieczona semaforem, przechowująca wyznaczone trasy (Moduł 2 --> Moduł 3).
+Sygnał SIGUSR2 nadawany przez Moduł 3., pobudzający do działania wątki Modułu 2.
+Sygnał SIGUSR2 nadawany przez Moduł 2. po wykonaniu zadania traceroutingu, informujący Moduł 3 o danych w kolejce wynikowej.
 
 ####Synchronizacja pomiędzy wątkami odbierającym i wysyłającym
-Wątki współdzielą kolejkę typu std::queue zabezpieczoną semaforem przeznaczoną do dostarczania wiedzy do wątku odbierającego o wysłanych pakietach. Kolejka ta przechowuje struktury zawierające kompletny pakiet oraz wyodrębione najważniejsze informacje na jego temat - wartości pól Identifier, Sequence i czas wysłania.
-Sygnał SIGUSR1 to polecenie "kontynuuj wysyłanie pakietów" wydawane wątkowi wysyłającemu przez wątek odbierający po odebraniu pakietu zidentyfikowanego jako odpowiedź na pakiet wysłany pobrany z kolejki.
+Wątki współdzielą kolejkę typu std::queue, zabezpieczoną semaforem, przeznaczoną do dostarczania wiedzy do wątku odbierającego o wysłanych pakietach. Kolejka ta przechowuje struktury zawierające kompletny pakiet oraz wyodrębione najważniejsze informacje na jego temat: wartości pól Identifier, Sequence i czas wysłania.
+Sygnał SIGUSR1 to polecenie "kontynuuj wysyłanie pakietów", wydawane wątkowi wysyłającemu przez wątek odbierający po odebraniu pakietu, zidentyfikowanego jako odpowiedź na pakiet wysłany pobrany z kolejki.
 Aby uniknąć aktywnego oczekiwania na komunikaty (np. "zawieszając" się na zmiennej współdzielonej), wątki odbierają sygnały poprzez wykorzystanie funkcji pselect(), która poza korzystaniem ze standardowych deskryptorów gniazd, powiadamia również w razie wystąpienia jednego z sygnałów.
 
 ####Algorytm traceroute:
 
-1. Wątek wysyłający przyjmuje od modułu nr 3 dane określające, jaka trasa ma być wyznaczona.
+1. Wątek wysyłający przyjmuje od Modułu nr 3 dane, określające, jaka trasa ma być wyznaczona.
 
 2. n = 1.
 
 3. Wygeneruj za pomocą generatora pakiet o TTL = n, Identifier = numer zadania, Sequence = n, a następnie wyślij je i poinformuj wątek odbierający o wysłanych pakietach poprzez wstawienie pierwszego z nich i jego najważniejszych danych do współdzielonej kolejki.
 
-4. Czekaj na sygnał od wątku odbierającego (funkcja pselect() o określonej wartości timeout powodującej automatyczne przejście do następnego zadania). Jeśli mamy kontynuować wysyłanie pakietów, n += 1 i wróć do punktu 4.
+4. Czekaj na sygnał od wątku odbierającego (funkcja pselect() o określonej wartości timeout, powodującej automatyczne przejście do następnego zadania). Jeśli mamy kontynuować wysyłanie pakietów, n += 1 i wróć do punktu 4.
 
 5. Po zakończeniu traceroutingu wątek odbierający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów). Jeśli w kolejce są kolejne trasy do wyznaczania, rozpoczynamy pracę.
 
@@ -152,20 +152,22 @@ TIMEOUT - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
 Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądania do wszystkich pozostałych modułów.
 #### Interakcja z modułem 1:
-1. Odbiór danych do tracerouta
+1. Odbiór danych do tracerouta.
 2. Odbiór żądania danych wynikowych:
-	a. Brak gotowych
-	b. Sparsowanie danych i przesłanie do modułu 1
+	a. Brak gotowych.
+	b. Sparsowanie danych i przesłanie do Modułu 1.
 #### Interakcja z modułem 2:
-1. Wstawienie do kolejki danych do tracerouta
-2. Odbiór z kolejki danych z tracerouta i sparsowanie ich.
+1. Wstawienie do kolejki danych do tracerouta.
+2. Nadanie sygnału SIGUSR2 do Modułu 2. w celu pobudzenia wątków tego modułu.
+3. Odebranie sygnału SIGUSR2 przez odpowiedni wątek od Modułu 2., informującego o danych z tracerouta.
+4. Odbiór z kolejki danych z tracerouta i sparsowanie ich.
 #### Interakcja z systemem plików:
-1. Dodanie nowego zadania (utwórz plik z dopiskiem ze niegotowy)
-2. Dodanie danych z zadania (otworzenie, zapis)
+1. Dodanie nowego zadania (utwórz plik z dopiskiem ze niegotowy).
+2. Dodanie danych z zadania (otworzenie, zapis).
 3. Wyciągnięcie informacji o stanie zadania:
-	a. Nieskończone
+	a. Nieskończone.
 	b. Gotowe - parsowanie danych.
 
 Moduł będzie działał na dwóch wątkach.
-Pierwszy będzie cyklicznie sprawdzał czy w kolejkach nie ma zadań do wykonania a następnie w zależności od sytuacji wykonywał odpowiednie zadania takie jak parsowanie, zapisywanie do plików, przesyłanie danych między kolejkami.
-Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników, jako że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym że zadanie jeszcze nie skończone lub parsował dane z plików do wersji obiektowej i przesyłał z powrotem do modułu 1..
+Pierwszy będzie cyklicznie sprawdzał, czy w kolejkach nie ma zadań do wykonania, a następnie w zależności od sytuacji wykonywał odpowiednie zadania, takie jak: parsowanie, zapisywanie do plików czy przesyłanie danych między kolejkami.
+Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników, jako że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym, że zadanie jest jeszcze nie skończone lub parsował dane z plików do wersji obiektowej i przesyłał z powrotem do Modułu 1..
