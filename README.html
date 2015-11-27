@@ -15,9 +15,9 @@
 
 <h2 id="uruchamianie-programu">Uruchamianie programu</h2>
 
-<p>Program będzie uruchamiany w środowisku Linuks za pomocą przykładowej instrukcji: <b>./traceroutemapper [-conf PLIK] [-log]</b>, gdzie argumenty między nawiasami kwadratowymi są opcjonalne. PLIK to ścieżka, pod którą znajduje się plik konfiguracyjny (może być lokalna). <br>
-Flaga -log aktywuje tryb logowania. Podczas trybu logowania zostanie utworzony dla każdego modułu osobny log (w celu zwiększenia czytelności). Położenie tych logów jest opisane w pliku konfiguracyjnym (parametr LOGPATH). Jeśli uruchomiono program bez pliku konfiguracyjnego, to domyślną ścieżką logów będzie folder, w którym znajduje się aplikacja “traceroutemapper”. <br>
-Plik konfiguracyjny zawiera wszelkie parametry, charakteryzujące moduły 1 i 2 oraz ścieżkę logów modułów. Wszystkie te paramtery mają wartości domyślne, na wypadek uruchomienia programu bez flagi -conf.</p>
+<p>Program będzie uruchamiany w środowisku Linuks za pomocą przykładowej instrukcji: <b>./traceroutemapper [-conf PLIK] [-log]</b>, gdzie argumenty między nawiasami kwadratowymi są opcjonalne. <br>
+Flaga -conf informuje o wczytaniu innego pliku konfiguracyjnego niż domyślny. PLIK to ścieżka, pod którą znajduje się plik konfiguracyjny. W przypadku braku flagi -conf domyślnie wczytywany jest plik konfiguracyjny o nazwie “ConfigFile.conf”. Plik konfiguracyjny zawiera wszelkie parametry, charakteryzujące moduły 1 i 2 oraz ścieżkę logów modułów. Wszystkie te parametry mają wartości domyślne na wypadek uruchomienia programu bez pliku konfiguracyjnego (nawet domyślnego). <br>
+Flaga -log aktywuje tryb logowania. Podczas trybu logowania zostanie utworzony dla każdego modułu osobny log (w celu zwiększenia czytelności). Położenie tych logów jest opisane w pliku konfiguracyjnym (parametr LOGPATH). Jeśli uruchomiono program bez pliku konfiguracyjnego, to domyślną ścieżką logów będzie folder, w którym znajduje się aplikacja “traceroutemapper”.</p>
 
 <h2 id="podział-na-moduły">Podział na moduły</h2>
 
