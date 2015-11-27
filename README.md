@@ -6,7 +6,7 @@ Celem zadania jest implementacja serwera, umożliwiającego wykonywanie mapowań
 Uruchamianie programu
 -------------
 Program będzie uruchamiany w środowisku Linuks za pomocą przykładowej instrukcji: <b>./traceroutemapper [-conf PLIK] [-log]</b>, gdzie argumenty między nawiasami kwadratowymi są opcjonalne. PLIK to ścieżka, pod którą znajduje się plik konfiguracyjny (może być lokalna).
-Flaga -log aktywuje tryb logowania. Podczas trybu logowania zostanie utworzony dla każdego modułu osobny log (w celu zwiększenia czytelności). Położenie tych logów jest opisane w pliku konfiguraycyjnym (parametr LOGPATH). Jeśli uruchomiono program bez pliku konfiguracyjnego, to domyślną ścieżką logów będzie folder, w którym znajduje się aplikacja "traceroutemapper".
+Flaga -log aktywuje tryb logowania. Podczas trybu logowania zostanie utworzony dla każdego modułu osobny log (w celu zwiększenia czytelności). Położenie tych logów jest opisane w pliku konfiguracyjnym (parametr LOGPATH). Jeśli uruchomiono program bez pliku konfiguracyjnego, to domyślną ścieżką logów będzie folder, w którym znajduje się aplikacja "traceroutemapper".
 Plik konfiguracyjny zawiera wszelkie parametry, charakteryzujące moduły 1 i 2 oraz ścieżkę logów modułów. Wszystkie te paramtery mają wartości domyślne, na wypadek uruchomienia programu bez flagi -conf.
 
 Podział na moduły
