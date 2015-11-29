@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include "pthread.h"
 #include "signal.h"
+#include <string.h>
 #include <sys/select.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -12,6 +13,7 @@
 #include <netinet/ip_icmp.h>
 #include <sys/stat.h>
 #include "errno.h"
+#include <arpa/inet.h>
 #include <iostream>
 
 
@@ -23,10 +25,43 @@ using namespace std;
 
 pthread_t sendingThread, receivingThread;
 sigset_t outselect, inselect;
+//ENGLISH XDDD
+int nasz_socket, rc;
+
+unsigned short in_cksum(unsigned short *addr,int len)
+{
+        register int sum = 0;
+        u_short answer = 0;
+        register u_short *w = addr;
+        register int nleft = len;
+
+        /*
+         * Our algorithm is simple, using a 32 bit accumulator (sum), we add
+         * sequential 16 bit words to it, and at the end, fold back all the
+         * carry bits from the top 16 bits into the lower 16 bits.
+         */
+        while (nleft > 1)  {
+                sum += *w++;
+                nleft -= 2;
+        }
+
+        /* mop up an odd byte, if necessary */
+        if (nleft == 1) {
+                *(u_char *)(&answer) = *(u_char *)w ;
+                sum += answer;
+        }
+
+        /* add back carry outs from top 16 bits to low 16 bits */
+        sum = (sum >> 16) + (sum & 0xffff);     /* add hi 16 to low 16 */
+        sum += (sum >> 16);                     /* add carry */
+        answer = ~sum;                          /* truncate to 16 bits */
+        return(answer);
+}
 
 void generatePacket(struct icmphdr *header, int* data, int id, int ttl)
-{
-	
+{	
+	memset(header, 0, sizeof(struct icmphdr));
+	memset(data, 0, sizeof(int));
 	header->type = ICMP_ECHO;
 	header->code = 0;
 	header->checksum = 0;
@@ -34,6 +69,8 @@ void generatePacket(struct icmphdr *header, int* data, int id, int ttl)
 	header->un.echo.sequence = id;
 	
 	*data = time(NULL);	
+	
+	header->checksum = in_cksum((unsigned short*)header, sizeof(struct icmphdr) + sizeof(int));
 }
 
 void sigterm(int signo) 
@@ -129,19 +166,36 @@ void* receiver(void *argument)
 
 int main()
 {
-	struct icmphdr header;
-	int data;
-	generatePacket(&header, &data, 1, 1);
+	struct sockaddr_in addr;
+	struct icmphdr* header = NULL;
+	int ttl = 3;
+	int* data = NULL;
+	char buf[sizeof(struct icmphdr) + sizeof(int)];
 	
-	printf("%d\n", header.type);
-	printf("%d\n", header.code);
-	printf("%d\n", header.checksum);
-	printf("%d\n", header.un.echo.id);
-	printf("%d\n", header.un.echo.sequence);
-	printf("%d\n", data);
+	header = (struct icmphdr*)buf;
+	data = (int*)(buf + sizeof(struct icmphdr));
 	
+	generatePacket(header, data, 1, 1);
+
+	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+	if (nasz_socket == -1)
+	{
+		perror("socket:");
+		exit(1);
+	}
+	setsockopt(nasz_socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
 	
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	inet_aton("94.23.242.48", &addr.sin_addr);
 	
+	rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
+				0, (struct sockaddr*)&addr, sizeof(addr));
+	if(rc == -1)
+	{
+		perror("sendto:");
+		exit(1);
+	}
 	
 	
 	
