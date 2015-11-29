@@ -145,7 +145,9 @@ void* receiver(void *argument)
     socklen_t raddr_len;
     struct iphdr* iphdr = NULL;
     struct icmphdr* icmphdr = NULL;
-	for(int i=0;i<20;i++)
+    char str[INET_ADDRSTRLEN];
+    raddr_len = sizeof(raddr);
+	while(1)
 	{
 		rc = recvfrom(nasz_socket, rbuf, sizeof(rbuf), 0, (struct sockaddr*)&raddr, &raddr_len);
 		if (rc == -1) 
@@ -176,6 +178,8 @@ void* receiver(void *argument)
 		}
 		printf("Otrzymana sekwencja: %x",icmphdr->un.echo.sequence);
 		printf(" Identifier %x\n", icmphdr->un.echo.id);
+		cout << inet_ntop(AF_INET, &(raddr.sin_addr), str, INET_ADDRSTRLEN) << " Rodzina: " << raddr.sin_family <<" " << endl;
+		memset(&raddr, 0, sizeof(raddr));
 	}
 	
 	
@@ -225,6 +229,7 @@ int main()
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	inet_aton("91.198.174.192", &addr.sin_addr);
+	//inet_aton("192.168.0.1", &addr.sin_addr);
 	
 	rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
 				0, (struct sockaddr*)&addr, sizeof(addr));
@@ -233,6 +238,7 @@ int main()
 		perror("sendto:");
 		exit(1);
 	}
+	//~ sleep(5);
 	inet_aton("192.168.0.1", &addr.sin_addr);
 	rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
 				0, (struct sockaddr*)&addr, sizeof(addr));
