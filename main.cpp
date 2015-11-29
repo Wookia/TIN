@@ -7,16 +7,34 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
 #include <sys/stat.h>
 #include "errno.h"
 #include <iostream>
 
+
 ///TODO: most likely need to set sigprocmask in one place only!
+
+
 
 using namespace std;
 
 pthread_t sendingThread, receivingThread;
 sigset_t outselect, inselect;
+
+void generatePacket(struct icmphdr *header, int* data, int id, int ttl)
+{
+	
+	header->type = ICMP_ECHO;
+	header->code = 0;
+	header->checksum = 0;
+	header->un.echo.id = (short)getpid();
+	header->un.echo.sequence = id;
+	
+	*data = time(NULL);	
+}
 
 void sigterm(int signo) 
 {
@@ -111,6 +129,29 @@ void* receiver(void *argument)
 
 int main()
 {
+	struct icmphdr header;
+	int data;
+	generatePacket(&header, &data, 1, 1);
+	
+	printf("%d\n", header.type);
+	printf("%d\n", header.code);
+	printf("%d\n", header.checksum);
+	printf("%d\n", header.un.echo.id);
+	printf("%d\n", header.un.echo.sequence);
+	printf("%d\n", data);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	//instalujemy handler
 	struct sigaction s;
     s.sa_handler = sigterm;
