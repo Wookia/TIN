@@ -138,6 +138,49 @@ void* sender(void *argument)
 
 void* receiver(void *argument)
 {
+	int rc;
+	int offset = 28;
+	char rbuf[60]; //sizeof(struct iphdr) + sizeof(struct icmp)
+	struct sockaddr_in raddr;
+    socklen_t raddr_len;
+    struct iphdr* iphdr = NULL;
+    struct icmphdr* icmphdr = NULL;
+	for(int i=0;i<20;i++)
+	{
+		rc = recvfrom(nasz_socket, rbuf, sizeof(rbuf), 0, (struct sockaddr*)&raddr, &raddr_len);
+		if (rc == -1) 
+		{
+			perror("recvfrom 2:");
+			exit(1);
+		}
+		printf("Odberano %d bajtow\n",rc);
+		iphdr = (struct iphdr*)rbuf;
+		
+		if (iphdr->protocol != IPPROTO_ICMP) 
+		{
+			fprintf(stderr, "Expected ICMP packet, got %u\n", iphdr->protocol);
+			exit(1);
+		}
+		icmphdr = (struct icmphdr*)(rbuf + (iphdr->ihl * 4));
+		printf("Dlugosc headera ip %d\n", iphdr->ihl);
+		//printf("Dlugosc headera icmp %d\n", icmphdr->ihl);
+		if (!(icmphdr->type == ICMP_ECHOREPLY ||  icmphdr->type == ICMP_TIME_EXCEEDED)) 
+		{
+			fprintf(stderr, "Expected ICMP echo-reply, got %u\n", icmphdr->type);
+			exit(1);
+		}
+		if(icmphdr->type == ICMP_TIME_EXCEEDED)
+		{
+			printf("TIME EXCEEDED\n");	
+			icmphdr = (struct icmphdr*)(rbuf + (iphdr->ihl * 4) + offset);
+		}
+		printf("Otrzymana sekwencja: %x",icmphdr->un.echo.sequence);
+		printf(" Identifier %x\n", icmphdr->un.echo.id);
+	}
+	
+	
+    
+   
 	//~ //blokujemy SIGTERMa
     //~ sigemptyset(&inselect);
     //~ sigaddset(&inselect, SIGUSR1);
@@ -145,22 +188,16 @@ void* receiver(void *argument)
     //~ sigaddset(&outselect, SIGUSR2);
     //~ sigprocmask(SIG_BLOCK, &inselect, NULL);
 	//~ 
-	float time = 2.5;
+	//~ float time = 2.5;
 	//usleep(time*1000000);
 	//sleep(5);
-	cout << "Wyslanie sygnalu 1" << endl;
-	//~ for(int i = 0; i<1000;i++)
-	//~ {
+	//~ cout << "Wyslanie sygnalu 1" << endl;
+//~ 
+	//~ pthread_kill(sendingThread,SIGUSR1);
+//~ 
+	//~ cout << "Wyslanie sygnalu 2" << endl;
 	//~ pthread_kill(sendingThread,SIGUSR2);
-	//~ }
-	pthread_kill(sendingThread,SIGUSR1);
-	//~ for(int i = 0; i<1000;i++)
-	//~ {
-	//~ pthread_kill(sendingThread,SIGUSR2);
-	//~ }
-	sleep(3);
-	cout << "Wyslanie sygnalu 2" << endl;
-	pthread_kill(sendingThread,SIGUSR2);
+	//~ return NULL;
 	return NULL;
 }
 
@@ -187,7 +224,7 @@ int main()
 	
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	inet_aton("94.23.242.48", &addr.sin_addr);
+	inet_aton("91.198.174.192", &addr.sin_addr);
 	
 	rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
 				0, (struct sockaddr*)&addr, sizeof(addr));
@@ -196,8 +233,14 @@ int main()
 		perror("sendto:");
 		exit(1);
 	}
-	
-	
+	inet_aton("192.168.0.1", &addr.sin_addr);
+	rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
+				0, (struct sockaddr*)&addr, sizeof(addr));
+	if(rc == -1)
+	{
+		perror("sendto:");
+		exit(1);
+	}
 	
 	
 	
