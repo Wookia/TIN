@@ -23,39 +23,42 @@
 
 using namespace std;
 
-pthread_t sendingThread, receivingThread;
+pthread_t sendingThread, receivingThread;	//test thread
+pthread_t senderThread, receiverThread;	//'legit' threads
 sigset_t outselect, inselect;
 //ENGLISH XDDD
 int nasz_socket, rc;
 
 unsigned short in_cksum(unsigned short *addr,int len)
 {
-        register int sum = 0;
-        u_short answer = 0;
-        register u_short *w = addr;
-        register int nleft = len;
+	register int sum = 0;
+    u_short answer = 0;
+    register u_short *w = addr;
+    register int nleft = len;
 
-        /*
-         * Our algorithm is simple, using a 32 bit accumulator (sum), we add
-         * sequential 16 bit words to it, and at the end, fold back all the
-         * carry bits from the top 16 bits into the lower 16 bits.
-         */
-        while (nleft > 1)  {
-                sum += *w++;
-                nleft -= 2;
-        }
+    /*
+    * Our algorithm is simple, using a 32 bit accumulator (sum), we add
+    * sequential 16 bit words to it, and at the end, fold back all the
+    * carry bits from the top 16 bits into the lower 16 bits.
+    */
+    while (nleft > 1)  
+    {
+		sum += *w++;
+		nleft -= 2;
+    }
 
-        /* mop up an odd byte, if necessary */
-        if (nleft == 1) {
-                *(u_char *)(&answer) = *(u_char *)w ;
-                sum += answer;
-        }
+	/* mop up an odd byte, if necessary */
+	if (nleft == 1) 
+	{
+		*(u_char *)(&answer) = *(u_char *)w ;
+		sum += answer;
+	}
 
-        /* add back carry outs from top 16 bits to low 16 bits */
-        sum = (sum >> 16) + (sum & 0xffff);     /* add hi 16 to low 16 */
-        sum += (sum >> 16);                     /* add carry */
-        answer = ~sum;                          /* truncate to 16 bits */
-        return(answer);
+	/* add back carry outs from top 16 bits to low 16 bits */
+	sum = (sum >> 16) + (sum & 0xffff);     /* add hi 16 to low 16 */
+	sum += (sum >> 16);                     /* add carry */
+	answer = ~sum;                          /* truncate to 16 bits */
+	return(answer);
 }
 
 void generatePacket(struct icmphdr *header, int* data, int id, int ttl)
@@ -65,12 +68,51 @@ void generatePacket(struct icmphdr *header, int* data, int id, int ttl)
 	header->type = ICMP_ECHO;
 	header->code = 0;
 	header->checksum = 0;
-	header->un.echo.id = (short)getpid();
-	header->un.echo.sequence = id;
+	header->un.echo.id = id;
+	header->un.echo.sequence = ttl;
 	
 	*data = time(NULL);	
 	
 	header->checksum = in_cksum((unsigned short*)header, sizeof(struct icmphdr) + sizeof(int));
+}
+
+void init()
+{
+	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+	if (nasz_socket == -1)
+	{
+		perror("socket:");
+		exit(1);
+	}
+}
+
+void* senderThreadWorker(void *argument)
+{
+	struct sockaddr_in addr;
+	struct icmphdr* header = NULL;
+	int ttl = 1;
+	int* data = NULL;
+	char buf[sizeof(struct icmphdr) + sizeof(int)];
+	header = (struct icmphdr*)buf;
+	data = (int*)(buf + sizeof(struct icmphdr));
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	inet_aton("91.198.174.192", &addr.sin_addr);
+	
+	for(ttl = 1; ttl <= 20; ttl++)
+	{
+		setsockopt(nasz_socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+		generatePacket(header, data, 1, ttl);
+		rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
+				0, (struct sockaddr*)&addr, sizeof(addr));
+		if(rc == -1)
+		{
+			perror("sendto:");
+			exit(1);
+		}
+		sleep(0.5);
+	}
+	return NULL;
 }
 
 void sigterm(int signo) 
@@ -207,48 +249,6 @@ void* receiver(void *argument)
 
 int main()
 {
-	struct sockaddr_in addr;
-	struct icmphdr* header = NULL;
-	int ttl = 3;
-	int* data = NULL;
-	char buf[sizeof(struct icmphdr) + sizeof(int)];
-	
-	header = (struct icmphdr*)buf;
-	data = (int*)(buf + sizeof(struct icmphdr));
-	
-	generatePacket(header, data, 1, 1);
-
-	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
-	if (nasz_socket == -1)
-	{
-		perror("socket:");
-		exit(1);
-	}
-	setsockopt(nasz_socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
-	
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	inet_aton("91.198.174.192", &addr.sin_addr);
-	//inet_aton("192.168.0.1", &addr.sin_addr);
-	
-	rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
-				0, (struct sockaddr*)&addr, sizeof(addr));
-	if(rc == -1)
-	{
-		perror("sendto:");
-		exit(1);
-	}
-	//~ sleep(5);
-	inet_aton("192.168.0.1", &addr.sin_addr);
-	rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
-				0, (struct sockaddr*)&addr, sizeof(addr));
-	if(rc == -1)
-	{
-		perror("sendto:");
-		exit(1);
-	}
-	
-	
 	
 	
 	
@@ -275,9 +275,15 @@ int main()
     sigaddset(&outselect, SIGUSR2);
     sigprocmask(SIG_BLOCK, &inselect, NULL);
     
-	printf("Tu bedzie sender:\n");
+    
+    
+    
+    init();
+    pthread_create(&senderThread, NULL, senderThreadWorker, NULL);
+    pthread_join(senderThread, NULL);
+    
+    /*
 	pthread_create(&sendingThread, NULL, sender, NULL);
-	printf("Tu bedzie receiver:\n");
 	pthread_create(&receivingThread, NULL, receiver, NULL);
 	
 	sleep(10);
@@ -286,4 +292,5 @@ int main()
 	pthread_join(sendingThread, NULL);
 	pthread_join(receivingThread, NULL);
     printf("MAMO JUSZ\n");
+    * */
 }
