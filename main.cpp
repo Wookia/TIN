@@ -15,6 +15,7 @@
 #include "errno.h"
 #include <arpa/inet.h>
 #include <iostream>
+#include "Module2.h"
 
 
 ///TODO: most likely need to set sigprocmask in one place only!
@@ -110,7 +111,7 @@ void* senderThreadWorker(void *argument)
 			perror("sendto:");
 			exit(1);
 		}
-		sleep(0.5);
+		sleep(2);
 	}
 	return NULL;
 }
@@ -249,12 +250,21 @@ void* receiver(void *argument)
 
 int main()
 {
+	Module2 module2;
+	module2.init();
+	module2.startThreads();
+	module2.joinThreads();
 	
 	
 	
 	
 	
 	
+	
+	
+	
+	
+	/*
 	//instalujemy handler
 	struct sigaction s;
     s.sa_handler = sigterm;
@@ -280,7 +290,9 @@ int main()
     
     init();
     pthread_create(&senderThread, NULL, senderThreadWorker, NULL);
+    pthread_create(&receivingThread, NULL, receiver, NULL);
     pthread_join(senderThread, NULL);
+    pthread_join(receivingThread, NULL);
     
     /*
 	pthread_create(&sendingThread, NULL, sender, NULL);
@@ -292,5 +304,5 @@ int main()
 	pthread_join(sendingThread, NULL);
 	pthread_join(receivingThread, NULL);
     printf("MAMO JUSZ\n");
-    * */
+    */
 }
