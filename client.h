@@ -23,8 +23,8 @@ class Client
 	private:
 		int socketClient;
 		int portNumber;
-		char data[100];
-		char output[100];
+		char data[1024];
+		char output[1024];
 		struct sockaddr_in server;
 		struct hostent* serverHost;
 	public:

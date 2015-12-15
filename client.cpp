@@ -28,17 +28,18 @@ Client::Client() {
 }
 
 void Client::reading() {
-	if (recv(socketClient, output, 100, 0) == -1) {
+	if (recv(socketClient, output, 1024, 0) == -1) {
 		perror("client recv");
 		exit(1);
 	}
+	
 	cout << output << endl;
 }
 
 void Client::writing() {
-	cin >> data;
+	gets(data);
 	
-	if (send(socketClient, data, 100, 0) == -1) {
+	if (send(socketClient, data, 1024, 0) == -1) {
 		perror("client send");
 		exit(1);
 	}

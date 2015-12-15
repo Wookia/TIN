@@ -24,9 +24,9 @@ class Server
 	private:
 		int socketServer;
 		int portNumber;
-		string IPAddress;
-		char dataSent[100];
-		char dataReceived[100];
+		const char* IPAddress;
+		char dataSent[1024];
+		char dataReceived[1024];
 		struct sockaddr_in server;
 		struct sockaddr_in client;
 	public:

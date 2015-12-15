@@ -1,12 +1,12 @@
 CC = g++
 CFLAGS = -g -Wall -std=c++0x
 
-client: client.o mainClientM1.o
-	$(CC) $(CFLAGS) client.o mainClientM1.o -o client
-mainClientM1.o: client.h mainClientM1.cpp
-	$(CC) $(CFLAGS) -c mainClientM1.cpp -o mainClientM1.o
-client.o: client.h client.cpp
-	$(CC) $(CFLAGS) -c client.cpp -o client.o
+server: server.o mainServerM1.o
+	$(CC) $(CFLAGS) server.o mainServerM1.o -o server
+mainServerM1.o: server.h mainServerM1.cpp
+	$(CC) $(CFLAGS) -c mainServerM1.cpp -o mainServerM1.o
+server.o: server.h server.cpp
+	$(CC) $(CFLAGS) -c server.cpp -o server.o
 
 clean:
 	$(RM) *.o *~
