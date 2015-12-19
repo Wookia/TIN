@@ -16,7 +16,7 @@ class SynchronizedQueue
     protected:
     private:
         std::queue<T> kolejka;
-        sem_t semafor;
+        sem_t sem;
 };
 
 #endif

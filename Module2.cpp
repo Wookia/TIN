@@ -14,17 +14,15 @@ Module2::Module2()
 	}
 }
 
-int Module2::init()
+int Module2::init(string& address, int newRetries)
 {
-	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
-	if (nasz_socket == -1)
-	{
-		perror("socket:");
-		exit(1);
-	}
+	tracedAddress = address;
+	retries = newRetries;
+	sigemptyset(&inselect);
+    sigemptyset(&outselect);
+    sigaddset(&inselect, SIGUSR2);
+    sigaddset(&outselect, SIGUSR1);
 	return 0;
-	
-	//todomadafaka
 }
 
 int Module2::startThreads()
@@ -48,6 +46,14 @@ void* senderThreadWorkerDel(void* delegate)
 
 void* Module2::senderThreadWorker(void* argument)
 {
+	fd_set set;
+	FD_ZERO(&set);
+	FD_SET(0, &set);
+   
+	struct timespec timerSet;
+	timerSet.tv_sec = 3;
+	timerSet.tv_nsec = 0;
+	
 	PacketGenerator packetgen;
 	struct sockaddr_in addr;
 	struct icmphdr* header = NULL;
@@ -58,8 +64,9 @@ void* Module2::senderThreadWorker(void* argument)
 	data = (int*)(buf + sizeof(struct icmphdr));
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	inet_aton("91.198.174.192", &addr.sin_addr);
+	inet_aton(tracedAddress.c_str(), &addr.sin_addr);
 	
+	int loopRetries = retries;
 	for(ttl = 1; ttl <= 20; ttl++)
 	{
 		setsockopt(nasz_socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
@@ -71,7 +78,25 @@ void* Module2::senderThreadWorker(void* argument)
 			perror("sendto:");
 			exit(1);
 		}
-		sleep(2);
+		sleep(1);
+		pselect(1, &set, NULL, NULL, &timerSet, &outselect);
+		if (errno == EINTR)
+		{
+			errno = 0;
+			loopRetries = retries;
+			continue;
+		}
+		else
+		{
+			if(pthread_kill(receiverThread, 0) != 0)
+			{
+				printf("Oho, odbieracz juz nie zyje. Wysylacz zegna!\n");
+				break;
+			}
+			loopRetries--;
+			if(loopRetries == 0) break;
+			ttl--;
+		}
 	}
 	return NULL;
 }
@@ -83,6 +108,14 @@ void* receiverThreadWorkerDel(void* delegate)
 
 void* Module2::receiverThreadWorker(void* argument)
 {
+	fd_set set;
+	FD_ZERO(&set);
+	FD_SET(0, &set);
+   
+	struct timespec timerSet;
+	timerSet.tv_sec = 20;
+	timerSet.tv_nsec = 0;
+	
 	int rc;
 	int offset = 28;
 	char rbuf[60]; //sizeof(struct iphdr) + sizeof(struct icmp)
@@ -123,8 +156,19 @@ void* Module2::receiverThreadWorker(void* argument)
 		}
 		printf("Otrzymana sekwencja: %x",icmphdr->un.echo.sequence);
 		printf(" Identifier %x\n", icmphdr->un.echo.id);
-		cout << inet_ntop(AF_INET, &(raddr.sin_addr), str, INET_ADDRSTRLEN) << " Rodzina: " << raddr.sin_family <<" " << endl;
+		std::string senderAddress = inet_ntop(AF_INET, &(raddr.sin_addr), str, INET_ADDRSTRLEN);
+		cout << senderAddress << " Rodzina: " << raddr.sin_family <<" " << endl;
 		memset(&raddr, 0, sizeof(raddr));
+		
+		
+		if(senderAddress == tracedAddress)
+		{
+			printf("Uff, juz po wszystkim. Odbieracz odmelodwuje sie!\n");
+			return NULL;
+		}
+		
+		printf("Wysylanie sygnalu\n");
+		pthread_kill(senderThread,SIGUSR2);
 	}
 	return NULL;
 }

@@ -21,6 +21,7 @@
 #include "SynchronizedQueue.h"
 #include "PacketGenerator.h"
 #include "Packet.h"
+#include <string>
 
 extern "C" void* senderThreadWorkerDel(void*);
 extern "C" void* receiverThreadWorkerDel(void*);
@@ -28,18 +29,18 @@ class Module2
 {
 	public:
 		Module2();
-		int init();
+		int init(std::string& address, int newRetries);
 		int startThreads();
 		int joinThreads();
 		void* senderThreadWorker(void*);
 		void* receiverThreadWorker(void*);
+		sigset_t outselect, inselect;
 		
 	private:
 		pthread_t senderThread, receiverThread;
-		sigset_t outselect, inselect;
+		std::string tracedAddress;
 		int nasz_socket, rc;
-	
-	
+		int retries;
 };
 
 #endif

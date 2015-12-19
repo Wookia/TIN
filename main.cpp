@@ -17,10 +17,7 @@
 #include <iostream>
 #include "Module2.h"
 
-
 ///TODO: most likely need to set sigprocmask in one place only!
-
-
 
 using namespace std;
 
@@ -118,12 +115,10 @@ void* senderThreadWorker(void *argument)
 
 void sigterm(int signo) 
 {
-	printf("first");
 }
 
 void secondHandler(int signo)
 {
-	printf("second");
 }
 
 void* sender(void *argument)
@@ -250,22 +245,6 @@ void* receiver(void *argument)
 
 int main()
 {
-	Module2 module2;
-	module2.init();
-	module2.startThreads();
-	module2.joinThreads();
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	/*
-	//instalujemy handler
 	struct sigaction s;
     s.sa_handler = sigterm;
     sigemptyset(&s.sa_mask);
@@ -278,22 +257,30 @@ int main()
     s2.sa_flags = 0;
     sigaction(SIGUSR2, &s2, NULL);
     
-    //blokujemy SIGTERMa
-    sigemptyset(&inselect);
-    sigaddset(&inselect, SIGUSR1);
-    //sigaddset(&newset, SIGUSR2);
-    sigaddset(&outselect, SIGUSR2);
-    sigprocmask(SIG_BLOCK, &inselect, NULL);
+    sigset_t signalSet;
+    sigemptyset(&signalSet);
+    sigaddset(&signalSet, SIGUSR2);
+    sigaddset(&signalSet, SIGUSR1);
+    sigprocmask(SIG_BLOCK, &signalSet, NULL);
+    
+    Module2 module2;
+    std::string address = "212.77.98.9";
+    int retries = 4;
+	module2.init(address, retries);
+	module2.startThreads();
+	module2.joinThreads();
+	  
+
     
     
     
-    
+    /*
     init();
     pthread_create(&senderThread, NULL, senderThreadWorker, NULL);
     pthread_create(&receivingThread, NULL, receiver, NULL);
     pthread_join(senderThread, NULL);
     pthread_join(receivingThread, NULL);
-    
+    */
     /*
 	pthread_create(&sendingThread, NULL, sender, NULL);
 	pthread_create(&receivingThread, NULL, receiver, NULL);
