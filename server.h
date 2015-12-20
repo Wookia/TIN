@@ -12,6 +12,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/stat.h>
+#include <pthread.h>
+#include <signal.h>
 #include "errno.h"
 #include <arpa/inet.h>
 #include <iostream>
@@ -19,8 +21,7 @@
 using namespace std;
 
 // Module 1 Server
-class Server
-{
+class Server {
 	private:
 		int socketServer;
 		int portNumber;
@@ -32,9 +33,14 @@ class Server
 	public:
 		Server();
 		
+		void* childThreadFunction(int connection);
 		void logger(int connection);
 		void reading(int connection);
 		void writing(int connection);
+		void doTraceroute();
+		void getData();
+		void sendJSON(int connection, int taskNr);
+		void parsingJSONToData();
 };
 
 #endif

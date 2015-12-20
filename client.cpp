@@ -14,7 +14,7 @@ Client::Client() {
 		exit(0);
 	}
 	
-	portNumber = 2000;
+	portNumber = 8080;
 	
 	server.sin_family = AF_INET;
 	memcpy((char*) &server.sin_addr, (char*) serverHost->h_addr, serverHost->h_length);

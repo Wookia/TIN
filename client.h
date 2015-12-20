@@ -18,8 +18,7 @@
 using namespace std;
 
 // Module 1 Client
-class Client
-{
+class Client {
 	private:
 		int socketClient;
 		int portNumber;
