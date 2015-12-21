@@ -23,7 +23,7 @@ SynchronizedQueue<T>::~SynchronizedQueue()
 }
 
 template<class T>
-void SynchronizedQueue<T>::push(T dane)
+void SynchronizedQueue<T>::push(T& dane)
 {
 	std::cout << "Wstawianie do kolejki" << std::endl;
     sem_wait(&sem);
@@ -37,7 +37,7 @@ void SynchronizedQueue<T>::push(T dane)
 }
 
 template<class T>
-T SynchronizedQueue<T>::pop()
+T& SynchronizedQueue<T>::pop()
 {
 	std::cout << "Wyciaganie z kolejki" << std::endl;
 	sem_wait(&sem_count);
@@ -50,7 +50,7 @@ T SynchronizedQueue<T>::pop()
     }
     else
     {
-        T temp = kolejka.front();
+        T& temp = kolejka.front();
         kolejka.pop();
         sem_post(&sem);
         std::cout << "Wyciagnieto!" << std::endl;

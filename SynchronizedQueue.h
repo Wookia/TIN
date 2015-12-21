@@ -11,8 +11,8 @@ class SynchronizedQueue
     public:
         SynchronizedQueue();
         virtual ~SynchronizedQueue();
-        void push(T);
-        T pop();
+        void push(T& dane);
+        T& pop();
     protected:
     private:
         std::queue<T> kolejka;
