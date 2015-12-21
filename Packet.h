@@ -13,5 +13,14 @@ class Packet
 		int identifier, sequence_ttl;
 		int replyType;
 		std::string ip_address;
+		Packet& operator= (Packet copiedPacket)
+		{
+			this->ipheader = copiedPacket.ipheader;
+			this->identifier = copiedPacket.identifier;
+			this->replyType = copiedPacket.replyType;
+			this->ip_address = copiedPacket.ip_address;
+			
+			return *this;
+		}
 };
 #endif

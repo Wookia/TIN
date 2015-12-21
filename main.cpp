@@ -57,8 +57,6 @@ void init_signal_handling()
 }
 void test()
 {
-	
-
 	std::list<Packet> odebrane;
 	SynchronizedQueue<Packet> queueToModule2;
 	SynchronizedQueue<std::list<Packet>> queueFromModule2;
@@ -70,28 +68,26 @@ void test()
 	queueToModule2.push(zadanie1);
 	
 	odebrane = queueFromModule2.pop();
-	for(Packet pack:odebrane)
+	for(Packet& pack:odebrane)
 		{
 			cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
 		}
 		cout << "koniec zadania" << endl;
 		queueToModule2.push(zadanie2);
 	odebrane = queueFromModule2.pop();
-	for(Packet pack:odebrane)
+	for(Packet& pack:odebrane)
 		{
 			cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
 		}
 		cout << "koniec zadania" << endl;
 		queueToModule2.push(zadanie3);
 	odebrane = queueFromModule2.pop();
-	for(Packet pack:odebrane)
+	for(Packet& pack:odebrane)
 		{
 			cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
 		}
 		cout << "koniec zadania" << endl;
 	module2.join();
-	
-	
 }
 
 int main()
