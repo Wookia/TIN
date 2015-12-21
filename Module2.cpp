@@ -1,6 +1,5 @@
 #include "Module2.h"
-#include "SynchronizedQueue.h"
-#include "PacketGenerator.h"
+
 
 using namespace std;
 
@@ -9,9 +8,11 @@ void* managerThreadWorkerDel(void* delegate)
 	return reinterpret_cast<Module2*>(delegate)->managerThreadWorker(NULL);
 }
 
-Module2::Module2()
+Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2, SynchronizedQueue<std::list<Packet>>* queueOutFromM2)
 {
 	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+	queueIntoModule = queueIntoM2;
+	queueOut = queueOutFromM2;
 	if (nasz_socket == -1)
 	{
 		perror("socket:");
@@ -65,6 +66,10 @@ void* Module2::senderThreadWorker(void* argument)
 	timerSet.tv_sec = 3;
 	timerSet.tv_nsec = 0;
 	
+	struct timespec timerSet2;
+	timerSet2.tv_sec = 20;
+	timerSet2.tv_nsec = 0;
+	
 	PacketGenerator packetgen;
 	struct sockaddr_in addr;
 	struct icmphdr* header = NULL;
@@ -106,7 +111,17 @@ void* Module2::senderThreadWorker(void* argument)
 				break;
 			}
 			loopRetries--;
-			if(loopRetries == 0) break;
+			if(loopRetries == 0) 
+			{
+				pselect(1, &set, NULL, NULL, &timerSet2, &outselect);
+				if (errno == EINTR)
+				{
+					errno = 0;
+					loopRetries = retries;
+					continue;
+				}
+				break;
+			}
 			ttl--;
 		}
 	}
@@ -120,9 +135,10 @@ void* receiverThreadWorkerDel(void* delegate)
 
 void* Module2::receiverThreadWorker(void* argument)
 {
-	fd_set set;
-	FD_ZERO(&set);
-	FD_SET(0, &set);
+	fd_set set2;
+	FD_ZERO(&set2);
+	FD_SET(nasz_socket, &set2);
+	cout << "NASZ SOCKET MA WARTOSC " << nasz_socket << endl;
    
 	struct timespec timerSet;
 	timerSet.tv_sec = 20;
@@ -130,6 +146,8 @@ void* Module2::receiverThreadWorker(void* argument)
 	
 	int rc;
 	int offset = 28;
+	int count;
+	int retries = 5;
 	char rbuf[60]; //sizeof(struct iphdr) + sizeof(struct icmp)
 	struct sockaddr_in raddr;
     socklen_t raddr_len;
@@ -137,9 +155,26 @@ void* Module2::receiverThreadWorker(void* argument)
     struct icmphdr* icmphdr = NULL;
     char str[INET_ADDRSTRLEN];
     raddr_len = sizeof(raddr);
+    traceroutePath.clear();
 	while(1)
 	{
-		//pselect?
+		count = 1;
+		count = pselect(4, &set2, NULL, NULL, &timerSet, NULL);
+		if(count==0) 
+		{
+				cout << "count = " << count << endl;
+				retries--;
+				if(retries==0)
+					return NULL;
+				FD_ZERO(&set2);
+				FD_SET(nasz_socket, &set2);
+				timerSet.tv_sec = 20;
+				timerSet.tv_nsec = 0;
+				pthread_kill(senderThread,SIGUSR2);
+				
+				continue;
+		}
+		retries = 5;
 		rc = recvfrom(nasz_socket, rbuf, sizeof(rbuf), 0, (struct sockaddr*)&raddr, &raddr_len);
 		if (rc == -1) 
 		{
@@ -201,18 +236,19 @@ void* Module2::receiverThreadWorker(void* argument)
 
 void* Module2::managerThreadWorker(void* argument)
 {
-	//getAJob()
-	//do the traceroute
-	std::string address = "212.77.98.9";
-    int retries = 4;
-	init(address, retries);
-	startThreads();
-	joinThreads();
-	for(Packet pack:traceroutePath)
+	//getAJob() //narazie petla na 3 zadanka
+	for(int i=0;i<3;i++)
 	{
-		cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
+		cout << "ODBIERANIE NR 1" << endl;
+		Packet test = queueIntoModule->pop();
+		//do the traceroute
+		
+		init(test.ip_address, 4);
+		startThreads();
+		joinThreads();
+		//get the results back
+		queueOut->push(traceroutePath);
+		//back to 1
 	}
-	//get the results back
-	//back to 1
 	return NULL;
 }

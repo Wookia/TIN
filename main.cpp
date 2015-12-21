@@ -16,6 +16,9 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include "Module2.h"
+#include <list>
+#include "Packet.h"
+#include "SynchronizedQueue.h"
 
 
 using namespace std;
@@ -52,18 +55,50 @@ void init_signal_handling()
     sigaddset(&signalSet, SIGUSR1);
     sigprocmask(SIG_BLOCK, &signalSet, NULL);
 }
+void test()
+{
+	
+
+	std::list<Packet> odebrane;
+	SynchronizedQueue<Packet> queueToModule2;
+	SynchronizedQueue<std::list<Packet>> queueFromModule2;
+	Module2 module2(&queueToModule2,&queueFromModule2);
+	Packet zadanie1,zadanie2,zadanie3;
+	zadanie1.ip_address = "8.8.8.8";
+	zadanie2.ip_address = "216.58.209.67";
+	zadanie3.ip_address = "212.77.98.9";
+	queueToModule2.push(zadanie1);
+	
+	odebrane = queueFromModule2.pop();
+	for(Packet pack:odebrane)
+		{
+			cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
+		}
+		cout << "koniec zadania" << endl;
+		queueToModule2.push(zadanie2);
+	odebrane = queueFromModule2.pop();
+	for(Packet pack:odebrane)
+		{
+			cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
+		}
+		cout << "koniec zadania" << endl;
+		queueToModule2.push(zadanie3);
+	odebrane = queueFromModule2.pop();
+	for(Packet pack:odebrane)
+		{
+			cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
+		}
+		cout << "koniec zadania" << endl;
+	module2.join();
+	
+	
+}
 
 int main()
 {
 
     init_signal_handling();
-    Module2 module2;
-    std::string address = "212.77.98.9";
-    int retries = 4;
-	//module2.init(address, retries);
-	//module2.startThreads();
-	//module2.joinThreads();
-	module2.join();
+    test();
 	  
 
 }

@@ -12,7 +12,7 @@ default: TIN
 # countwords.o, counter.o, and scanner.o:
 #
 TIN:  PacketGenerator.o SynchronizedQueue.o Module2.o main.o
-	$(CC) $(CFLAGS) -o TIN main.o Module2.o PacketGenerator.o SynchronizedQueue.o
+	$(CC) $(CFLAGS) -o TIN main.o SynchronizedQueue.o Module2.o PacketGenerator.o
 
 # To create the object file countwords.o, we need the source
 # files countwords.c, scanner.h, and counter.h:
@@ -24,7 +24,7 @@ main.o:  main.cpp Module2.h
 # counter.c and counter.h:
 #
 
-Module2.o:  Packet.h Module2.cpp Module2.h
+Module2.o:  Packet.h Module2.cpp Module2.h SynchronizedQueue.h
 	$(CC) $(CFLAGS) -c Module2.cpp
 
 SynchronizedQueue.o:  SynchronizedQueue.cpp SynchronizedQueue.h 

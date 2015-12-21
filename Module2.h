@@ -18,9 +18,9 @@
 #include "errno.h"
 #include <arpa/inet.h>
 #include <iostream>
-#include "SynchronizedQueue.h"
 #include "PacketGenerator.h"
 #include "Packet.h"
+#include "SynchronizedQueue.h"
 #include <string>
 #include <list>
 
@@ -30,6 +30,8 @@ class Module2
 {
 	public:
 		Module2();
+		Module2 (SynchronizedQueue<Packet>* queueIntoM2, SynchronizedQueue<std::list<Packet>>* queueOutFromM2);
+		//ZMIENIC Z PACKET NA COS CO BEDZIE REPREZENTOWAC ZADANIE
 		int init(std::string& address, int newRetries);
 		int startThreads();
 		int joinThreads();
@@ -40,7 +42,8 @@ class Module2
 		sigset_t outselect, inselect;
 		
 	private:
-		//SynchronizedQueue 
+		SynchronizedQueue<Packet>* queueIntoModule;
+		SynchronizedQueue<std::list<Packet>>* queueOut;
 		std::list<Packet> traceroutePath;
 		pthread_t senderThread, receiverThread, managerThread;
 		std::string tracedAddress;
