@@ -60,9 +60,10 @@ int main()
     Module2 module2;
     std::string address = "212.77.98.9";
     int retries = 4;
-	module2.init(address, retries);
-	module2.startThreads();
-	module2.joinThreads();
+	//module2.init(address, retries);
+	//module2.startThreads();
+	//module2.joinThreads();
+	module2.join();
 	  
 
 }

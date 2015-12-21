@@ -45,6 +45,11 @@ int Module2::joinThreads()
     return 0;
 }
 
+void Module2::join()
+{
+	pthread_join(managerThread,NULL);
+}
+
 void* senderThreadWorkerDel(void* delegate)
 {
 	return reinterpret_cast<Module2*>(delegate)->senderThreadWorker(NULL);

@@ -33,6 +33,7 @@ class Module2
 		int init(std::string& address, int newRetries);
 		int startThreads();
 		int joinThreads();
+		void join();
 		void* senderThreadWorker(void*);
 		void* receiverThreadWorker(void*);
 		void* managerThreadWorker(void*);
