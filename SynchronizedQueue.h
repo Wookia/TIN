@@ -17,6 +17,7 @@ class SynchronizedQueue
     private:
         std::queue<T> kolejka;
         sem_t sem;
+        sem_t sem_count;
 };
 
 #endif

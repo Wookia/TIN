@@ -4,6 +4,11 @@
 
 using namespace std;
 
+void* managerThreadWorkerDel(void* delegate)
+{
+	return reinterpret_cast<Module2*>(delegate)->managerThreadWorker(NULL);
+}
+
 Module2::Module2()
 {
 	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
@@ -12,6 +17,7 @@ Module2::Module2()
 		perror("socket:");
 		exit(1);
 	}
+	pthread_create(&managerThread, NULL, &managerThreadWorkerDel, reinterpret_cast<void*>(this));
 }
 
 int Module2::init(string& address, int newRetries)
@@ -71,6 +77,7 @@ void* Module2::senderThreadWorker(void* argument)
 	{
 		setsockopt(nasz_socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
 		packetgen.generatePacket(header, data, 1, ttl);
+		cout << "Wysylanie pakietu TTL " << ttl << endl; 
 		rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
 				0, (struct sockaddr*)&addr, sizeof(addr));
 		if(rc == -1)
@@ -127,12 +134,14 @@ void* Module2::receiverThreadWorker(void* argument)
     raddr_len = sizeof(raddr);
 	while(1)
 	{
+		//pselect?
 		rc = recvfrom(nasz_socket, rbuf, sizeof(rbuf), 0, (struct sockaddr*)&raddr, &raddr_len);
 		if (rc == -1) 
 		{
 			perror("recvfrom 2:");
 			exit(1);
 		}
+		
 		printf("Odberano %d bajtow\n",rc);
 		iphdr = (struct iphdr*)rbuf;
 		
@@ -158,6 +167,16 @@ void* Module2::receiverThreadWorker(void* argument)
 		printf(" Identifier %x\n", icmphdr->un.echo.id);
 		std::string senderAddress = inet_ntop(AF_INET, &(raddr.sin_addr), str, INET_ADDRSTRLEN);
 		cout << senderAddress << " Rodzina: " << raddr.sin_family <<" " << endl;
+		Packet receivedPacket;
+		
+		//JEZELI CHCEMY TRZYMAC CALA STRUKTURE IPHDR TRZEBA ZROBIC JEJ KOPIOWANIE DO KLASY PACKET
+		receivedPacket.identifier = icmphdr->un.echo.id;
+		receivedPacket.sequence_ttl = icmphdr->un.echo.sequence;
+		receivedPacket.replyType = icmphdr->type;
+		receivedPacket.ip_address = senderAddress;
+		cout << "ip_address:" << receivedPacket.ip_address << endl;
+		
+		traceroutePath.push_back(receivedPacket);
 		memset(&raddr, 0, sizeof(raddr));
 		
 		
@@ -170,5 +189,25 @@ void* Module2::receiverThreadWorker(void* argument)
 		printf("Wysylanie sygnalu\n");
 		pthread_kill(senderThread,SIGUSR2);
 	}
+	return NULL;
+}
+
+
+
+void* Module2::managerThreadWorker(void* argument)
+{
+	//getAJob()
+	//do the traceroute
+	std::string address = "212.77.98.9";
+    int retries = 4;
+	init(address, retries);
+	startThreads();
+	joinThreads();
+	for(Packet pack:traceroutePath)
+	{
+		cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
+	}
+	//get the results back
+	//back to 1
 	return NULL;
 }

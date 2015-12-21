@@ -22,6 +22,7 @@
 #include "PacketGenerator.h"
 #include "Packet.h"
 #include <string>
+#include <list>
 
 extern "C" void* senderThreadWorkerDel(void*);
 extern "C" void* receiverThreadWorkerDel(void*);
@@ -34,10 +35,13 @@ class Module2
 		int joinThreads();
 		void* senderThreadWorker(void*);
 		void* receiverThreadWorker(void*);
+		void* managerThreadWorker(void*);
 		sigset_t outselect, inselect;
 		
 	private:
-		pthread_t senderThread, receiverThread;
+		//SynchronizedQueue 
+		std::list<Packet> traceroutePath;
+		pthread_t senderThread, receiverThread, managerThread;
 		std::string tracedAddress;
 		int nasz_socket, rc;
 		int retries;
