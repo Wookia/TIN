@@ -1,8 +1,9 @@
 #ifndef task_h_
 #define task_h_
 
-#include <string.h>
+#include <string>
 #include <iostream>
+#include <ctime>
 
 using namespace std;
 
@@ -12,7 +13,8 @@ class Task {
 		string* ip;
 		int taskNumber;
 		
-		//void generateNumber();
+		Task(int size);
+		int generateNumber();
 };
 
 /*

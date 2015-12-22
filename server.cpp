@@ -99,9 +99,9 @@ Task Server::parsingJSONToData() {
 		assert(document["addresses"].IsArray());
 		Value& addresses = document["addresses"];
 		
-		Task task;
-		task.ip = new string[addresses.Size()];
-		task.taskNumber = 69;
+		Task task(addresses.Size());
+		
+		cout << task.taskNumber << endl;
 		
 		for (SizeType i = 0; i < addresses.Size(); i++) {
 			assert(addresses[i]["address"].IsString());
