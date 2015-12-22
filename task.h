@@ -14,6 +14,8 @@ class Task {
 		int taskNumber;
 		
 		Task(int size);
+		~Task();
+		
 		int generateNumber();
 	private:
 		static int counter;
