@@ -16,6 +16,12 @@ Client::Client() {
 	
 	portNumber = 8080;
 	
+	int yes = 1;
+	if (setsockopt(socketClient, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1 ) {
+		perror("setsockopt");
+		exit(1);
+	}
+	
 	server.sin_family = AF_INET;
 	memcpy((char*) &server.sin_addr, (char*) serverHost->h_addr, serverHost->h_length);
 	server.sin_port = htons(portNumber);

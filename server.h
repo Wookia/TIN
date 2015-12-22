@@ -18,7 +18,17 @@
 #include <arpa/inet.h>
 #include <iostream>
 
+#include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
+#include "task.h"
+
 using namespace std;
+using namespace rapidjson;
+
+struct package {
+	void* delegate;
+	int connection;
+};
 
 // Module 1 Server
 class Server {
@@ -39,8 +49,8 @@ class Server {
 		void writing(int connection);
 		void doTraceroute();
 		void getData();
-		void sendJSON(int connection, int taskNr);
-		void parsingJSONToData();
+		void writeJSON(int connection, int taskNr);
+		Task parsingJSONToData();
 };
 
 #endif
