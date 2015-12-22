@@ -15,6 +15,8 @@ class Task {
 		
 		Task(int size);
 		int generateNumber();
+	private:
+		static int counter;
 };
 
 /*
