@@ -6,13 +6,6 @@ void* childThreadFunctionDel(void* pack) {
 	return reinterpret_cast<Server*>(packa.delegate)->childThreadFunction(packa.connection);
 }
 
-void* Server::childThreadFunction(int connection) {
-	cout << "Thread No: " << pthread_self() << endl;
-	logger(connection);
-	close(connection);
-	return NULL;
-}
-
 Server::Server() {
 	socketServer = socket(AF_INET, SOCK_STREAM, 0);
 	if (socketServer == -1) {
@@ -75,9 +68,16 @@ Server::Server() {
 	*/ 
 }
 
+void* Server::childThreadFunction(int connection) {
+	cout << "Thread No: " << pthread_self() << endl;
+	logger(connection);
+	close(connection);
+	return NULL;
+}
+
 //converting JSON to appropiate object
-Task Server::parsingJSONToData() {
-	// reading JSON part from HTTP message from Client
+void Server::parsingJSONToDocument(Document& document) {
+	//reading JSON part from HTTP message from Client
 	string readJSON;
 	int i=0;
 	for ( ; dataReceived[i]!='{'; i++) ;
@@ -85,38 +85,42 @@ Task Server::parsingJSONToData() {
 		readJSON += dataReceived[i];
 	}
 	
-	Document document;
 	if(document.Parse(readJSON.c_str()).HasParseError()) {
 		cerr << "parsing error" << endl;
 		cout << readJSON << endl;
 		exit(1);
 	}
-	
+
+}
+
+void Server::parsingAddressesJSONToTask(Document& document, Task& task) {
 	assert(document.IsObject());
 	
-	// parsing first JSON
-	if (document.HasMember("addresses")) {
-		assert(document["addresses"].IsArray());
-		Value& addresses = document["addresses"];
-		
-		Task task(addresses.Size());
-		
-		cout << task.taskNumber << endl;
-		
-		for (SizeType i = 0; i < addresses.Size(); i++) {
-			assert(addresses[i]["address"].IsString());
-			task.ip[i] = addresses[i]["address"].GetString();
-		}
-		
-		return task;
+	//parsing first JSON
+	assert(document["addresses"].IsArray());
+	Value& addresses = document["addresses"];
+	
+	task.initTask(addresses.Size());
+	
+	cout << task.taskNumber << endl;
+	
+	for (SizeType i = 0; i < addresses.Size(); i++) {
+		assert(addresses[i]["address"].IsString());
+		task.ip[i] = addresses[i]["address"].GetString();
 	}
+}
+
+void Server::parsingTasksJSONToParsedData(Document& document, ParsedData& parsedData) {
 	/* parsing second JSON
-	else if (document.HasMember["tasks"]()) {
+	else if (document.HasMember("tasks")) {
+		assert(document["tasks"].IsArray());
 		Value& tasks = document["tasks"];
-		Addresses addresses;
-		addresses.task = new Task[tasks.Size()];
+		
+		ParsedData parsedData(tasks.Size());
+		
 		for (SizeType i = 0; i < tasks.Size(); i++) {
-			addresses.task.ip[i] = tasks[i]["task"].GetInt();
+			assert(tasks[i]["task"].IsInt());
+			parsedData.addresses[i].taskNumber = tasks[i]["task"].GetInt();
 		}
 	}
 	*/
@@ -126,21 +130,25 @@ Task Server::parsingJSONToData() {
 void Server::logger(int connection) {
 	reading(connection);
 	if(dataReceived[0]=='P') { // POST
+		Document document;
+		parsingJSONToDocument(document);
 		
-		//struct{Object,ResponseType}=ParsingJSONToData();
-		Task task=parsingJSONToData();
-		
-		/* if(ResponseType==LONG) { 
-		 * 		sleep(4);
-		 * }
-		*/
-		// Task.generateNumber();
-		
-		cout << task.taskNumber << endl;
-		for(int i=0; i<sizeof(task.ip)/sizeof(task.ip[0]); i++) {
-			cout << task.ip[i] << endl;
+		if (document.HasMember("addresses")) {
+			Task task;
+			parsingAddressesJSONToTask(document, task);
+			
+			cout << task.taskNumber << endl;
+			
+			for(int i=0; i<task.size; i++) {
+				cout << task.ip[i] << endl;
+			}
+			
+			writeJSON(connection, task.taskNumber);
 		}
-		writeJSON(connection, task.taskNumber);
+		else if (document.HasMember("addresses")) {
+			ParsedData parsedData;
+			parsingTasksJSONToParsedData(document, parsedData);
+		}
 	}
 	else if (dataReceived[0] == 'G') { // GET
 		writing(connection);

@@ -40,6 +40,7 @@ class Server {
 		char dataReceived[1024];
 		struct sockaddr_in server;
 		struct sockaddr_in client;
+		
 	public:
 		Server();
 		
@@ -50,7 +51,9 @@ class Server {
 		void doTraceroute();
 		void getData();
 		void writeJSON(int connection, int taskNr);
-		Task parsingJSONToData();
+		void parsingJSONToDocument(Document& document);
+		void parsingAddressesJSONToTask(Document& document, Task& task);
+		void parsingTasksJSONToParsedData(Document& document, ParsedData& parsedData);
 };
 
 #endif

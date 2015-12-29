@@ -1,6 +1,7 @@
 #ifndef task_h_
 #define task_h_
 
+#include <cstring>
 #include <string>
 #include <iostream>
 #include <ctime>
@@ -12,31 +13,29 @@ class Task {
 	public:
 		string* ip;
 		int taskNumber;
+		int size;
 		
-		Task(int size);
+		Task();
 		~Task();
+		Task(const Task& task);
 		
+		void initTask(int size);
 		int generateNumber();
 	private:
 		static int counter;
 };
 
-/*
-class TaskResult {
-	public:
-		int taskNumber;
-		char** addresses[traceroute[]];
-};
-
 class Addresses {
 	public:
-		Task task;
-		char** addresses[traceroute[]];
+		int taskNumber;
+		string** addresses;
+		int size;
 };
 
 class ParsedData {
 	public:
-		char* traceroute[];
+		Addresses* addresses;
+		int size;
 };
-*/
+
 #endif
