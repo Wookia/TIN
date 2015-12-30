@@ -138,6 +138,7 @@ void Server::parsingTasksJSONToParsedData(Document& document, ParsedData& parsed
 void Server::logger(int connection) {
 	//first read, then respond appriopiately
 	string dataReceived=reading(connection);
+	int HTTPcode;
 	
 	if (dataReceived[0] == 'P') { // POST
 		Document document;
@@ -153,9 +154,9 @@ void Server::logger(int connection) {
 				cout << "ip[" << i << "]: " <<task.ip[i] << endl;
 			}
 			
-			string json = createResponseToAddressesJSON(task.taskNumber);
+			string json = createResponseToAddressesJSON(task.taskNumber, HTTPcode);
 			
-			writeJSON(connection, json);
+			writeJSON(connection, json, HTTPcode);
 			
 			doTraceroute();
 		}
@@ -166,14 +167,15 @@ void Server::logger(int connection) {
 			for(int i=0; i<parsedData.size; i++) {
 				cout << "tasks[" << i << "]: " << parsedData.addresses[i].taskNumber << endl;
 			}
-			
-			string json = createResponseToTasksJSON(parsedData);
-			
-			//getData();
-			
+						
 			//sleep() or long loop
+			sleep(4);
 			
-			//writeJSON(connection, json);
+			getData();
+			
+			string json = createResponseToTasksJSON(parsedData, HTTPcode);
+			
+			writeJSON(connection, json, HTTPcode);
 		}
 	}
 	else if (dataReceived[0] == 'G') { // GET
@@ -207,14 +209,16 @@ void Server::writing(int connection) {
 	return;
 }
 
-string Server::createResponseToAddressesJSON(int taskNr) {
+string Server::createResponseToAddressesJSON(int taskNumber, int& HTTPcode) {
 	//manually creating JSON
 	string json;
 	
+	HTTPcode = 200;
+	
 	json += "{ \"task\": ";
-	char taskNumber[100];
-	sprintf(taskNumber, "%d", taskNr);
-	json += taskNumber;
+	char taskNr[100];
+	sprintf(taskNr, "%d", taskNumber);
+	json += taskNr;
 	json += " }";
 	
 	cout << "JSON Response to AddressesJSON: " << json << endl;
@@ -222,12 +226,23 @@ string Server::createResponseToAddressesJSON(int taskNr) {
 	return json;
 }
 
-string Server::createResponseToTasksJSON(ParsedData& parsedData) {
+string Server::createResponseToTasksJSON(ParsedData& parsedData, int& HTTPcode) {
 	//manually creating JSON
 	
-	string json = "Nic";
+	string json;
 	
 	///TODO: ResponseToTasksJSON
+	
+	if (parsedData.addresses[0].size == 0) {
+		HTTPcode = 404;
+		json = "";
+		return json;
+	}
+	
+	HTTPcode = 200;
+	json += "{ \"tasks\": [ { } ] }";
+	
+	
 	
 	cout << "JSON Response to TasksJSON: " << json << endl;
 	return json;
@@ -235,11 +250,20 @@ string Server::createResponseToTasksJSON(ParsedData& parsedData) {
 
 //writing HTTP Response with appropiate JSON
 //writeJSON( connection, taskNr, object Task or other)
-void Server::writeJSON(int connection, string& json) {
-	if (sprintf(dataSent,"HTTP/1.1 200 OK\r\nServer: TIN/1.0\r\nContent-Lenght: %ld\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n%s",json.size(),json.c_str()) < 0 ) {
-		cerr << "sprintf error";
-		exit(1);
+void Server::writeJSON(int connection, string& json, int HTTPcode) {
+	if(json == "") {
+		if (sprintf(dataSent,"HTTP/1.1 %d NOT FOUND\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n", HTTPcode) < 0 ) {
+			cerr << "sprintf error";
+			exit(1);
+		}
 	}
+	else {
+		if (sprintf(dataSent,"HTTP/1.1 %d OK\r\nServer: TIN/1.0\r\nContent-Lenght: %ld\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n%s", HTTPcode, json.size(),json.c_str()) < 0 ) {
+			cerr << "sprintf error";
+			exit(1);
+		}
+	}
+	
 	if (send(connection, dataSent, strlen(dataSent), 0) == -1) {
 		perror("sendJSON");
 		exit(1);
@@ -250,8 +274,10 @@ void Server::writeJSON(int connection, string& json) {
 
 void Server::doTraceroute() {
 	
+	return;
 }
 
 void Server::getData() {
 	
+	return;
 }

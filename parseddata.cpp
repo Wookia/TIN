@@ -1,7 +1,8 @@
 #include "parseddata.h"
 
 ParsedData::ParsedData() {
-
+	addresses = NULL;
+	size = 0;
 }
 
 ParsedData::~ParsedData() {

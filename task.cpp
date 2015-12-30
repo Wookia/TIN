@@ -3,7 +3,8 @@
 int Task::counter = 0;
 
 Task::Task() {
-
+	ip = NULL;
+	size = 0;
 }
 
 Task::~Task() {
