@@ -169,9 +169,9 @@ void Server::logger(int connection) {
 			}
 						
 			//sleep() or long loop
-			sleep(4);
+			sleep(2);
 			
-			getData();
+			testGetData(parsedData);
 			
 			string json = createResponseToTasksJSON(parsedData, HTTPcode);
 			
@@ -236,20 +236,39 @@ string Server::createResponseToTasksJSON(ParsedData& parsedData, int& HTTPcode) 
 	if (parsedData.addresses[0].size == 0) {
 		HTTPcode = 404;
 		json = "";
-		return json;
+	}
+	else {
+		HTTPcode = 200;
+
+		json += "{ \"tasks\": [ ";
+		for (int i=0; i<parsedData.size; i++) {
+			json +="{ \"task\": ";
+			char taskNr[100];
+			sprintf(taskNr, "%d", parsedData.addresses[i].taskNumber);
+			json += taskNr;
+			json += ", \"addresses\": [ ";
+			for (int j=0; j<parsedData.addresses[i].sizeOfTraceroute[0]; j++) {
+				json += "{ \"address\": \"";
+				json += parsedData.addresses[i].addresses[0][j];
+				json += "\"}";
+				if (j < (parsedData.addresses[i].sizeOfTraceroute[0]-1)) {
+					json += ", ";
+				}
+			}
+			json += " ] }";
+			if (i < (parsedData.size-1)) {
+				json += ", ";
+			}
+		}
+		json += "] }";
+		
+		cout << "JSON Response to TasksJSON: " << json << endl;
 	}
 	
-	HTTPcode = 200;
-	json += "{ \"tasks\": [ { } ] }";
-	
-	
-	
-	cout << "JSON Response to TasksJSON: " << json << endl;
 	return json;
 }
 
 //writing HTTP Response with appropiate JSON
-//writeJSON( connection, taskNr, object Task or other)
 void Server::writeJSON(int connection, string& json, int HTTPcode) {
 	if(json == "") {
 		if (sprintf(dataSent,"HTTP/1.1 %d NOT FOUND\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n", HTTPcode) < 0 ) {
@@ -277,7 +296,27 @@ void Server::doTraceroute() {
 	return;
 }
 
-void Server::getData() {
+void Server::getData(ParsedData& parsedData) {
+	
+	return;
+}
+
+
+void Server::testGetData(ParsedData& parsedData) {
+	parsedData.addresses[0].initAddresses(1);
+	parsedData.addresses[1].initAddresses(1);
+	
+	string traceroute[2];
+	traceroute[0] = "127.8.0.1";
+	traceroute[1] = "127.0.1.2";
+	
+	parsedData.addresses[0].fillTracerouteAddresses(0, 2, traceroute);
+	
+	string tracert[2];
+	tracert[0] = "127.7.3.2";
+	tracert[1] = "127.4.5.0";
+	
+	parsedData.addresses[1].fillTracerouteAddresses(0, 2, tracert);
 	
 	return;
 }

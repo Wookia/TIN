@@ -13,12 +13,13 @@ class Addresses {
 		int taskNumber;
 		string** addresses;
 		int size;
+		int* sizeOfTraceroute;
 		
 		Addresses();
 		~Addresses();
 		
 		void initAddresses(int size);
-		void fillTracerouteAddresses();
+		void fillTracerouteAddresses(int i, int numberOfAddreses, string traceroute[]);
 };
 
 #endif

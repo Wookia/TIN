@@ -6,7 +6,7 @@ ParsedData::ParsedData() {
 }
 
 ParsedData::~ParsedData() {
-	//delete[] addresses;
+	delete[] addresses;
 }
 
 void ParsedData::initParsedData(int size) {
