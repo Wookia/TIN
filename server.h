@@ -19,8 +19,9 @@
 #include <iostream>
 
 #include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
+
 #include "task.h"
+#include "parseddata.h"
 
 using namespace std;
 using namespace rapidjson;
@@ -50,7 +51,9 @@ class Server {
 		void writing(int connection);
 		void doTraceroute();
 		void getData();
-		void writeJSON(int connection, int taskNr);
+		string createResponseToAddressesJSON(int taskNr);
+		string createResponseToTasksJSON(ParsedData& parsedData);
+		void writeJSON(int connection, string& json);
 		void parsingJSONToDocument(Document& document);
 		void parsingAddressesJSONToTask(Document& document, Task& task);
 		void parsingTasksJSONToParsedData(Document& document, ParsedData& parsedData);

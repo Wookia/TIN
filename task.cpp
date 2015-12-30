@@ -10,16 +10,12 @@ Task::~Task() {
 	delete[] ip;
 }
 
-Task::Task(const Task& task) {
-	memcpy(this, &task, sizeof(task));
-}
-
 void Task::initTask(int size) {
 	ip = new string[size];
 	
 	Task::size = size;
 	
-	taskNumber=generateNumber();
+	taskNumber = generateNumber();
 	
 	return;
 }

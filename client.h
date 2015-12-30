@@ -26,6 +26,7 @@ class Client {
 		char output[1024];
 		struct sockaddr_in server;
 		struct hostent* serverHost;
+		
 	public:
 		Client();
 		

@@ -1,4 +1,5 @@
 #include "task.h"
+#include "parseddata.h"
 #include "server.h"
 
 void* childThreadFunctionDel(void* pack) {
@@ -16,7 +17,7 @@ Server::Server() {
 	portNumber = 8080;
 	IPAddress = "127.0.0.1";
     
-    int yes=1;
+    int yes = 1;
 	if (setsockopt(socketServer, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
 		perror("setsockopt");
 		exit(1);
@@ -38,9 +39,9 @@ Server::Server() {
 	
 	int connection;
 	pthread_t* childThread;
-	int i=1;
 	socklen_t sockaddrClient;
 	
+	int i = 1;
 	while (1) {
 		sockaddrClient = sizeof(client);
 		connection = accept(socketServer, (struct sockaddr*) &client, &sockaddrClient);
@@ -49,14 +50,14 @@ Server::Server() {
 			exit(1);
 		}
 		if (i == 1) {
-			childThread=(pthread_t*)malloc(sizeof(pthread_t));
+			childThread = (pthread_t*)malloc(sizeof(pthread_t));
 		}
 		else { 
-			childThread=(pthread_t*)realloc(childThread,i*sizeof(pthread_t));
+			childThread = (pthread_t*)realloc(childThread,i*sizeof(pthread_t));
 		}
 		struct package pack;
-		pack.delegate=reinterpret_cast<void*>(this);
-		pack.connection=connection;
+		pack.delegate = reinterpret_cast<void*>(this);
+		pack.connection = connection;
 		pthread_create(&childThread[i-1], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
 		i++;
 	}
@@ -70,8 +71,10 @@ Server::Server() {
 
 void* Server::childThreadFunction(int connection) {
 	cout << "Thread No: " << pthread_self() << endl;
+	
 	logger(connection);
 	close(connection);
+	
 	return NULL;
 }
 
@@ -79,57 +82,64 @@ void* Server::childThreadFunction(int connection) {
 void Server::parsingJSONToDocument(Document& document) {
 	//reading JSON part from HTTP message from Client
 	string readJSON;
-	int i=0;
+	
+	//skipping through HTTP Header to JSON Object
+	int i = 0;
 	for ( ; dataReceived[i]!='{'; i++) ;
 	for ( ; dataReceived[i]!='\0'; i++) {
 		readJSON += dataReceived[i];
 	}
 	
-	if(document.Parse(readJSON.c_str()).HasParseError()) {
+	if (document.Parse(readJSON.c_str()).HasParseError()) {
 		cerr << "parsing error" << endl;
 		cout << readJSON << endl;
 		exit(1);
 	}
-
+	
+	return;
 }
 
 void Server::parsingAddressesJSONToTask(Document& document, Task& task) {
-	assert(document.IsObject());
-	
 	//parsing first JSON
+	assert(document.IsObject());
+		
 	assert(document["addresses"].IsArray());
 	Value& addresses = document["addresses"];
 	
 	task.initTask(addresses.Size());
 	
-	cout << task.taskNumber << endl;
+	cout << "parsingJSON, Task nr: " << task.taskNumber << endl;
 	
 	for (SizeType i = 0; i < addresses.Size(); i++) {
 		assert(addresses[i]["address"].IsString());
 		task.ip[i] = addresses[i]["address"].GetString();
 	}
+	
+	return;
 }
 
 void Server::parsingTasksJSONToParsedData(Document& document, ParsedData& parsedData) {
-	/* parsing second JSON
-	else if (document.HasMember("tasks")) {
-		assert(document["tasks"].IsArray());
-		Value& tasks = document["tasks"];
-		
-		ParsedData parsedData(tasks.Size());
-		
-		for (SizeType i = 0; i < tasks.Size(); i++) {
-			assert(tasks[i]["task"].IsInt());
-			parsedData.addresses[i].taskNumber = tasks[i]["task"].GetInt();
-		}
+	//parsing second JSON
+    assert(document.IsObject());
+    
+	assert(document["tasks"].IsArray());
+	Value& tasks = document["tasks"];
+	
+	parsedData.initParsedData(tasks.Size());
+	
+	for (SizeType i = 0; i < tasks.Size(); i++) {
+		assert(tasks[i]["task"].IsInt());
+		parsedData.addresses[i].taskNumber = tasks[i]["task"].GetInt();
 	}
-	*/
+	
+	return;
 }
 
 // Logger reads HTTP message and writes the HTTP answer to client
 void Server::logger(int connection) {
 	reading(connection);
-	if(dataReceived[0]=='P') { // POST
+	
+	if (dataReceived[0] == 'P') { // POST
 		Document document;
 		parsingJSONToDocument(document);
 		
@@ -137,17 +147,29 @@ void Server::logger(int connection) {
 			Task task;
 			parsingAddressesJSONToTask(document, task);
 			
-			cout << task.taskNumber << endl;
+			cout << "Logger, Task nr: " << task.taskNumber << endl;
 			
-			for(int i=0; i<task.size; i++) {
-				cout << task.ip[i] << endl;
+			for (int i=0; i<task.size; i++) {
+				cout << "ip[" << i << "]: " <<task.ip[i] << endl;
 			}
 			
-			writeJSON(connection, task.taskNumber);
+			string json = createResponseToAddressesJSON(task.taskNumber);
+			
+			writeJSON(connection, json);
+			
+			doTraceroute();
 		}
 		else if (document.HasMember("addresses")) {
 			ParsedData parsedData;
 			parsingTasksJSONToParsedData(document, parsedData);
+			
+			string json = createResponseToTasksJSON(parsedData);
+			
+			getData();
+			
+			//sleep() or long loop
+			
+			writeJSON(connection, json);
 		}
 	}
 	else if (dataReceived[0] == 'G') { // GET
@@ -156,6 +178,8 @@ void Server::logger(int connection) {
 	else {
 		writing(connection);
 	}
+	
+	return;
 }
 
 void Server::reading(int connection) {
@@ -164,6 +188,8 @@ void Server::reading(int connection) {
 		exit(1);
 	}
 	cout << dataReceived << endl;
+	
+	return;
 }
 
 void Server::writing(int connection) {
@@ -172,21 +198,40 @@ void Server::writing(int connection) {
 		perror("writing");
 		exit(1);
 	}
+	
+	return;
 }
 
-//writing HTTP Response with appropiate JSON
-//writeJSON( connection, taskNr, object Task or other)
-void Server::writeJSON(int connection, int taskNr) {
+string Server::createResponseToAddressesJSON(int taskNr) {
 	//manually creating JSON
 	string json;
+	
 	json += "{ \"task\": ";
 	char taskNumber[100];
 	sprintf(taskNumber, "%d", taskNr);
 	json += taskNumber;
 	json += " }";
-	cout << json << endl;
 	
-	if(sprintf(dataSent,"HTTP/1.1 200 OK\r\nServer: TIN/1.0\r\nContent-Lenght: %ld\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n%s",json.size(),json.c_str()) < 0 ) {
+	cout << "JSON Response to AddressesJSON: " << json << endl;
+	
+	return json;
+}
+
+string Server::createResponseToTasksJSON(ParsedData& parsedData) {
+	//manually creating JSON
+	
+	string json;
+	
+	///TODO: ResponseToTasksJSON
+	
+	cout << "JSON Response to TasksJSON: " << json << endl;
+	return json;
+}
+
+//writing HTTP Response with appropiate JSON
+//writeJSON( connection, taskNr, object Task or other)
+void Server::writeJSON(int connection, string& json) {
+	if (sprintf(dataSent,"HTTP/1.1 200 OK\r\nServer: TIN/1.0\r\nContent-Lenght: %ld\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n%s",json.size(),json.c_str()) < 0 ) {
 		cerr << "sprintf error";
 		exit(1);
 	}
@@ -194,6 +239,8 @@ void Server::writeJSON(int connection, int taskNr) {
 		perror("sendJSON");
 		exit(1);
 	}
+	
+	return;
 }
 
 void Server::doTraceroute() {

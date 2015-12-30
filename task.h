@@ -17,25 +17,12 @@ class Task {
 		
 		Task();
 		~Task();
-		Task(const Task& task);
 		
 		void initTask(int size);
 		int generateNumber();
+		
 	private:
 		static int counter;
-};
-
-class Addresses {
-	public:
-		int taskNumber;
-		string** addresses;
-		int size;
-};
-
-class ParsedData {
-	public:
-		Addresses* addresses;
-		int size;
 };
 
 #endif
