@@ -15,9 +15,9 @@ class ParsedData {
 		Addresses* addresses;
 		int size;
 		
-		ParsedData() {}
-		~ParsedData() {}
-		void initParsedData(int size) {}
+		ParsedData();
+		~ParsedData();
+		void initParsedData(int size);
 };
 
 #endif

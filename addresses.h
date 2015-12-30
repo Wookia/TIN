@@ -14,8 +14,11 @@ class Addresses {
 		string** addresses;
 		int size;
 		
-		Addresses(int size) {}
-		~Addresses() {}
+		Addresses();
+		~Addresses();
+		
+		void initAddresses(int size);
+		void fillTracerouteAddresses();
 };
 
 #endif

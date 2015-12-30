@@ -38,7 +38,6 @@ class Server {
 		int portNumber;
 		const char* IPAddress;
 		char dataSent[1024];
-		char dataReceived[1024];
 		struct sockaddr_in server;
 		struct sockaddr_in client;
 		
@@ -47,14 +46,14 @@ class Server {
 		
 		void* childThreadFunction(int connection);
 		void logger(int connection);
-		void reading(int connection);
+		string reading(int connection);
 		void writing(int connection);
 		void doTraceroute();
 		void getData();
 		string createResponseToAddressesJSON(int taskNr);
 		string createResponseToTasksJSON(ParsedData& parsedData);
 		void writeJSON(int connection, string& json);
-		void parsingJSONToDocument(Document& document);
+		void parsingJSONToDocument(Document& document, string dataReceived);
 		void parsingAddressesJSONToTask(Document& document, Task& task);
 		void parsingTasksJSONToParsedData(Document& document, ParsedData& parsedData);
 };

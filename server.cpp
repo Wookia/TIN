@@ -1,5 +1,3 @@
-#include "task.h"
-#include "parseddata.h"
 #include "server.h"
 
 void* childThreadFunctionDel(void* pack) {
@@ -79,7 +77,7 @@ void* Server::childThreadFunction(int connection) {
 }
 
 //converting JSON to appropiate object
-void Server::parsingJSONToDocument(Document& document) {
+void Server::parsingJSONToDocument(Document& document, string dataReceived) {
 	//reading JSON part from HTTP message from Client
 	string readJSON;
 	
@@ -128,6 +126,7 @@ void Server::parsingTasksJSONToParsedData(Document& document, ParsedData& parsed
 	parsedData.initParsedData(tasks.Size());
 	
 	for (SizeType i = 0; i < tasks.Size(); i++) {
+		assert(tasks[i].HasMember("task"));
 		assert(tasks[i]["task"].IsInt());
 		parsedData.addresses[i].taskNumber = tasks[i]["task"].GetInt();
 	}
@@ -137,11 +136,12 @@ void Server::parsingTasksJSONToParsedData(Document& document, ParsedData& parsed
 
 // Logger reads HTTP message and writes the HTTP answer to client
 void Server::logger(int connection) {
-	reading(connection);
+	//first read, then respond appriopiately
+	string dataReceived=reading(connection);
 	
 	if (dataReceived[0] == 'P') { // POST
 		Document document;
-		parsingJSONToDocument(document);
+		parsingJSONToDocument(document, dataReceived);
 		
 		if (document.HasMember("addresses")) {
 			Task task;
@@ -159,17 +159,21 @@ void Server::logger(int connection) {
 			
 			doTraceroute();
 		}
-		else if (document.HasMember("addresses")) {
+		else if (document.HasMember("tasks")) {
 			ParsedData parsedData;
 			parsingTasksJSONToParsedData(document, parsedData);
 			
+			for(int i=0; i<parsedData.size; i++) {
+				cout << "tasks[" << i << "]: " << parsedData.addresses[i].taskNumber << endl;
+			}
+			
 			string json = createResponseToTasksJSON(parsedData);
 			
-			getData();
+			//getData();
 			
 			//sleep() or long loop
 			
-			writeJSON(connection, json);
+			//writeJSON(connection, json);
 		}
 	}
 	else if (dataReceived[0] == 'G') { // GET
@@ -182,14 +186,15 @@ void Server::logger(int connection) {
 	return;
 }
 
-void Server::reading(int connection) {
+string Server::reading(int connection) {
+	char dataReceived[10000];
 	if (recv(connection, dataReceived, sizeof(dataReceived), 0) == -1) {
 		perror("reading");
 		exit(1);
 	}
 	cout << dataReceived << endl;
-	
-	return;
+	string data = dataReceived;
+	return data;
 }
 
 void Server::writing(int connection) {
@@ -220,7 +225,7 @@ string Server::createResponseToAddressesJSON(int taskNr) {
 string Server::createResponseToTasksJSON(ParsedData& parsedData) {
 	//manually creating JSON
 	
-	string json;
+	string json = "Nic";
 	
 	///TODO: ResponseToTasksJSON
 	
