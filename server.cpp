@@ -239,24 +239,31 @@ string Server::createResponseToTasksJSON(ParsedData& parsedData, int& HTTPcode) 
 	}
 	else {
 		HTTPcode = 200;
-
+		
 		json += "{ \"tasks\": [ ";
 		for (int i=0; i<parsedData.size; i++) {
-			json +="{ \"task\": ";
+			json += "{ \"task\": ";
 			char taskNr[100];
 			sprintf(taskNr, "%d", parsedData.addresses[i].taskNumber);
 			json += taskNr;
 			json += ", \"addresses\": [ ";
-			for (int j=0; j<parsedData.addresses[i].sizeOfTraceroute[0]; j++) {
-				json += "{ \"address\": \"";
-				json += parsedData.addresses[i].addresses[0][j];
-				json += "\"}";
-				if (j < (parsedData.addresses[i].sizeOfTraceroute[0]-1)) {
+			for (int j=0; j<parsedData.addresses[i].size; j++) {
+				json += "{ \"traceroute\": [ ";
+				for (int k=0; k<parsedData.addresses[i].sizeOfTraceroute[j]; k++) {
+					json += "{ \"address\": \"";
+					json += parsedData.addresses[i].addresses[j][k];
+					json += "\"}";
+					if (k < parsedData.addresses[i].sizeOfTraceroute[j]-1) {
+						json += ", ";
+					}
+				}
+				json += " ] }";
+				if (j < parsedData.addresses[i].size-1) {
 					json += ", ";
 				}
 			}
 			json += " ] }";
-			if (i < (parsedData.size-1)) {
+			if (i < parsedData.size-1) {
 				json += ", ";
 			}
 		}
@@ -303,20 +310,22 @@ void Server::getData(ParsedData& parsedData) {
 
 
 void Server::testGetData(ParsedData& parsedData) {
-	parsedData.addresses[0].initAddresses(1);
-	parsedData.addresses[1].initAddresses(1);
+	parsedData.addresses[0].initAddresses(2);
+	parsedData.addresses[1].initAddresses(2);
 	
 	string traceroute[2];
 	traceroute[0] = "127.8.0.1";
 	traceroute[1] = "127.0.1.2";
 	
 	parsedData.addresses[0].fillTracerouteAddresses(0, 2, traceroute);
+	parsedData.addresses[0].fillTracerouteAddresses(1, 2, traceroute);
 	
 	string tracert[2];
 	tracert[0] = "127.7.3.2";
 	tracert[1] = "127.4.5.0";
 	
 	parsedData.addresses[1].fillTracerouteAddresses(0, 2, tracert);
+	parsedData.addresses[1].fillTracerouteAddresses(1, 2, tracert);
 	
 	return;
 }
