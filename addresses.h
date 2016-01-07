@@ -10,7 +10,7 @@ using namespace std;
 
 class Addresses {
 	public:
-		int taskNumber;
+		long long int taskNumber;
 		string** addresses;
 		int size;
 		int* sizeOfTraceroute;

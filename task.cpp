@@ -20,8 +20,10 @@ void Task::initTask(int size) {
 	
 	return;
 }
-int Task::generateNumber() {
-	///TODO: przesunac 2 bity w lewo i dodac licznik zadania
-	//moga przyjsc dwa zadania w jednej sekundzie
-	return ((time(nullptr)<<4));//+((counter<4)?(counter++):(counter=0)));
+long long int Task::generateNumber() {	
+	struct timeval tp;
+    gettimeofday(&tp, NULL);
+    long long int mslong = (long long int) tp.tv_sec * 1000L + tp.tv_usec / 1000;
+    
+    return mslong;
 }

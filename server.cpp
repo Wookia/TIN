@@ -128,7 +128,7 @@ void Server::parsingTasksJSONToParsedData(Document& document, ParsedData& parsed
 	for (SizeType i = 0; i < tasks.Size(); i++) {
 		assert(tasks[i].HasMember("task"));
 		assert(tasks[i]["task"].IsInt());
-		parsedData.addresses[i].taskNumber = tasks[i]["task"].GetInt();
+		parsedData.addresses[i].taskNumber = (long long int) tasks[i]["task"].GetInt();
 	}
 	
 	return;
@@ -209,7 +209,7 @@ void Server::writing(int connection) {
 	return;
 }
 
-string Server::createResponseToAddressesJSON(int taskNumber, int& HTTPcode) {
+string Server::createResponseToAddressesJSON(long long int taskNumber, int& HTTPcode) {
 	//manually creating JSON
 	string json;
 	
@@ -217,7 +217,7 @@ string Server::createResponseToAddressesJSON(int taskNumber, int& HTTPcode) {
 	
 	json += "{ \"task\": ";
 	char taskNr[100];
-	sprintf(taskNr, "%d", taskNumber);
+	sprintf(taskNr, "%Ld", taskNumber);
 	json += taskNr;
 	json += " }";
 	
@@ -244,7 +244,7 @@ string Server::createResponseToTasksJSON(ParsedData& parsedData, int& HTTPcode) 
 		for (int i=0; i<parsedData.size; i++) {
 			json += "{ \"task\": ";
 			char taskNr[100];
-			sprintf(taskNr, "%d", parsedData.addresses[i].taskNumber);
+			sprintf(taskNr, "%Ld", parsedData.addresses[i].taskNumber);
 			json += taskNr;
 			json += ", \"addresses\": [ ";
 			for (int j=0; j<parsedData.addresses[i].size; j++) {

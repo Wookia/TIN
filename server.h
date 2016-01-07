@@ -50,7 +50,7 @@ class Server {
 		void writing(int connection);
 		void doTraceroute();
 		void getData(ParsedData& parsedData);
-		string createResponseToAddressesJSON(int taskNr, int& HTTPcode);
+		string createResponseToAddressesJSON(long long int taskNr, int& HTTPcode);
 		string createResponseToTasksJSON(ParsedData& parsedData, int& HTTPcode);
 		void writeJSON(int connection, string& json, int HTTPcode);
 		void parsingJSONToDocument(Document& document, string dataReceived);

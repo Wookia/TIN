@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <ctime>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -12,14 +13,14 @@ using namespace std;
 class Task {
 	public:
 		string* ip;
-		int taskNumber;
+		long long taskNumber;
 		int size;
 		
 		Task();
 		~Task();
 		
 		void initTask(int size);
-		int generateNumber();
+		long long int generateNumber();
 		
 	private:
 		static int counter;
