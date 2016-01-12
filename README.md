@@ -3,6 +3,12 @@ TIN
 
 Celem zadania jest implementacja serwera, umożliwiającego wykonywanie mapowań połączeń pomiędzy ruterami. Zachowanie algorytmu traceroutingu zgodne jest z działaniem programu tracert ze środowiska MS Windows - program wysyła komunikaty ICMP ECHO_REQUEST z kolejnymi wartościami pola TTL i oczekuje komunikatów ICMP TIME_EXCEEDED. Zlecenie wykonania zadania oraz odbiór wyników wykorzystuje połączenie z wykorzystaniem protokołu HTTP i notacji/składni JSON. Program będzie zrealizowany w środowisku Linuks.
 
+Uruchamianie programu
+-------------
+Program będzie uruchamiany w środowisku Linuks za pomocą przykładowej instrukcji: <b>./traceroutemapper [-conf PLIK] [-log]</b>, gdzie argumenty między nawiasami kwadratowymi są opcjonalne.
+Flaga -conf informuje o wczytaniu innego pliku konfiguracyjnego niż domyślny. PLIK to ścieżka, pod którą znajduje się plik konfiguracyjny. W przypadku braku flagi -conf domyślnie wczytywany jest plik konfiguracyjny o nazwie "ConfigFile.conf". Plik konfiguracyjny zawiera wszelkie parametry, charakteryzujące moduły 1 i 2 oraz ścieżkę logów modułów. Wszystkie te parametry mają wartości domyślne na wypadek uruchomienia programu bez pliku konfiguracyjnego (nawet domyślnego).
+Flaga -log aktywuje tryb logowania. Podczas trybu logowania zostanie utworzony dla każdego modułu osobny log (w celu zwiększenia czytelności). Położenie tych logów jest opisane w pliku konfiguracyjnym (parametr LOGPATH). Jeśli uruchomiono program bez pliku konfiguracyjnego, to domyślną ścieżką logów będzie folder, w którym znajduje się aplikacja "traceroutemapper".
+
 Podział na moduły
 -------------
 ####Moduł 1: Kontakt poprzez protokół HTTP za pomocą JSON'ów:
@@ -113,13 +119,23 @@ Szczegółowy opis działania modułów
 -------------
 ###Moduł 1
 Moduł 1 odbiera JSON'y, przesyłane od kilenta za pomocą protokołu HTTP(POST). Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań.
-#### /doTraceroute
+####/doTraceroute
 Moduł odbiera JSON'a z danymi do tracerouta (struktura powyżej), przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a), a następnie umieszcza obiekt w kolejce oczekujących.
 ####/getData
 Moduł odbiera JSON'a z numerem zadania. Składa żądanie do Modułu 3. o dane o zadanym numerze. Jeśli w zwrocie dostaje dane, to parsuje je do JSON'a którego zwraca. Jeśli nie, zwraca odpowiedni kod błędu.
 
 Moduł 1 działa na "jednym" samoklonującym się wątku, który w sytuacji odebrania żądania tworzy swojego klona, a sam zajmuje się wykonaniem zadanego zadania.
 
+####Nasłuchiwanie
+Jeżeli uruchomiono program bez pliku konfiguracyjnego, to domyślnym portem, na którym nasłuchuje serwer jest port 80 (HTTP), a domyślnym adresem - localhost. W przeciwnym przypadku numer portu oraz adres IP są pobierane z pliku konfiguracyjnego.
+
+####Parametry dotyczące Modułu 1:
+
+Parametry przechowywane są w standardowym tekstowym pliku konfiguracyjnym ConfigFile.conf - jeden parametr odpowiadający jednej linii pliku:
+
+PORTNUMBER - numer portu, na którym nasłuchuje serwer
+
+IPADDRESS - adres IP, na którym nasłuchuje serwer
 
 ###Moduł 2
 Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na trzy zasadnicze elementy: generator pakietów (działający w wątku wysyłającym), wątek wysyłający pakiety oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
@@ -130,13 +146,13 @@ Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket
 ####Budowa pakietu ICMP Echo:
 Nagłówek protokołu IP będzie budowany automatycznie, wykorzystując flagę IP_HDRINCL z API raw socket.
 Nagłówek ICMP oraz dane będą budowane ręcznie w następujący sposób:
-- Typ - typ wysyłanego komunikatu ICMP w naszym przypadku 08 - Echo request(1 bajt)
-- Kod - podtyp wiadomości, naśladując MS Windows, program wpisuje kod 00 (1 bajt)
-- Suma kontrolna - wyliczana na podstawie nagłówka pakietu ICMP oraz danych (2 bajty)
-- Identyfikator - reprezentujący numer zadania, używany do identyfikacji odpowiadających pakietów (2 bajty)
-- Numer sekwencji - reprezentujący TTL, jak identyfikator używany do identyfikacji odpowiadających pakietów (2 bajty)
+- Typ - typ wysyłanego komunikatu ICMP w naszym przypadku 08 - Echo request (1 oktet)
+- Kod - podtyp wiadomości, naśladując MS Windows, program wpisuje kod 00 (1 oktet)
+- Suma kontrolna - wyliczana na podstawie nagłówka pakietu ICMP oraz danych (2 oktety)
+- Identyfikator - reprezentujący numer zadania, używany do identyfikacji odpowiadających pakietów (2 oktety)
+- Numer sekwencji - reprezentujący TTL, jak identyfikator używany do identyfikacji odpowiadających pakietów (2 oktety)
 
-Dane: 64 bajty zer.
+Dane: 64 oktety zer.
 
 ####Wątek wysyłający
 Przyjmuje zadania od Modułu 3., generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Zapisuje informacje o wysłanym pakiecie (w tym czas wysłania) do kolejki, z której odbierze tę strukturę wątek odbierający.
@@ -167,9 +183,9 @@ Aby uniknąć aktywnego oczekiwania na komunikaty (np. "zawieszając" się na zm
 
 5. Po zakończeniu traceroutingu wątek odbierający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów). Jeśli w kolejce są kolejne trasy do wyznaczania, rozpoczynamy pracę.
 
-####Parametry dotyczące Modułu 2.:
+####Parametry dotyczące Modułu 2:
 
-Parametry przechowywane są w standardowym tekstowym pliku konfiguracyjnym Module2.conf - jeden parametr odpowiadający jednej linii pliku.
+Parametry przechowywane są w standardowym tekstowym pliku konfiguracyjnym ConfigFile.conf - jeden parametr odpowiadający jednej linii pliku.
 
 MAX_TTL - domyślna wartość maksymalnego czasu życia pakietu.
 
@@ -180,13 +196,13 @@ FREQ - częstotliwość wysyłania pakietów. Część zapór ogniowych może wy
 TIMEOUT - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
 Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądania do wszystkich pozostałych modułów.
-####Interakcja z Modułem 1.:
+####Interakcja z Modułem 1:
 1. Odbiór danych do tracerouta.
 2. Odbiór żądania danych wynikowych:
 	a. Brak gotowych.
 	b. Sparsowanie danych i przesłanie do Modułu 1.
 
-####Interakcja z Modułem 2.:
+####Interakcja z Modułem 2:
 1. Wstawienie do kolejki danych do tracerouta.
 2. Nadanie sygnału SIGUSR2 do Modułu 2. w celu pobudzenia wątków tego modułu.
 3. Odebranie sygnału SIGUSR2 przez odpowiedni wątek od Modułu 2., informującego o danych z tracerouta.
