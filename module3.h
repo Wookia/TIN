@@ -1,3 +1,6 @@
+
+#ifndef module3_h_
+#define module3_h_
 #include "result.h"
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -21,3 +24,4 @@ class Module3
         Result getData(int taskNr);
         
 };
+#endif

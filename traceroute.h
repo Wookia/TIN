@@ -1,3 +1,6 @@
+#ifndef traceroute_h_
+#define traceroute_h_
+
 #include <list>
 #include <string>
 
@@ -11,3 +14,4 @@ class Traceroute
             return *this;
         }
 };
+#endif

@@ -1,9 +1,12 @@
+#ifndef result_h_
+#define result_h_
+
 #include "traceroute.h"
 
 class Result
 {
     public:
-        int taskNr;
+        long long int taskNr;
         std::list<Traceroute> addresses;
         Result& operator= (Result copiedResult)
         {
@@ -12,3 +15,4 @@ class Result
             return *this;
         }
 };
+#endif

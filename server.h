@@ -21,7 +21,7 @@
 #include "rapidjson/document.h"
 
 #include "task.h"
-#include "parseddata.h"
+#include "module3.h"
 
 using namespace std;
 using namespace rapidjson;
@@ -40,23 +40,22 @@ class Server {
 		char dataSent[1024];
 		struct sockaddr_in server;
 		struct sockaddr_in client;
-		
+		Module3 dataReciver;
+
 	public:
 		Server();
-		
+
 		void* childThreadFunction(int connection);
 		void logger(int connection);
 		string reading(int connection);
 		void writing(int connection);
 		void doTraceroute();
-		void getData(ParsedData& parsedData);
 		string createResponseToAddressesJSON(long long int taskNr, int& HTTPcode);
-		string createResponseToTasksJSON(ParsedData& parsedData, int& HTTPcode);
+		string createResponseToTasksJSON(list<Result>& results, int& HTTPcode);
 		void writeJSON(int connection, string& json, int HTTPcode);
-		void parsingJSONToDocument(Document& document, string dataReceived);
-		void parsingAddressesJSONToTask(Document& document, Task& task);
-		void parsingTasksJSONToParsedData(Document& document, ParsedData& parsedData);
-		void testGetData(ParsedData& parsedData);
+		void parsingJSONToDocument(Document& document, string dataReceived)throw(string);
+		void parsingAddressesJSONToTask(Document& document, Task& task)throw(string);
+		void parsingTasksJSONToParsedData(Document& document, list<long long int>& tasksList)throw(string);
 };
 
 #endif
