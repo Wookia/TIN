@@ -21,7 +21,7 @@ class Module3
         Module3(std::string repoPath);
         void createFolder();
         void saveData(Result result);
-        Result getData(int taskNr);
+        Result getData(long long int taskNr);
         
 };
 #endif

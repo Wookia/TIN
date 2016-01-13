@@ -20,10 +20,11 @@ Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2)
 	pthread_create(&managerThread, NULL, &managerThreadWorkerDel, reinterpret_cast<void*>(this));
 }
 
-int Module2::init(string& address, int newRetries)
+int Module2::init(string& address, long long int taskNr, int newRetries)
 {
 	Module3 module3;
 	tracedAddress = address;
+    taskNumber = taskNr;
 	retries = newRetries;
 	sigemptyset(&inselect);
     sigemptyset(&outselect);
@@ -218,7 +219,7 @@ void* Module2::receiverThreadWorker(void* argument)
 		receivedPacket.replyType = icmphdr->type;
 		receivedPacket.ip_address = senderAddress;
 		cout << "ip_address:" << receivedPacket.ip_address << endl;
-		result.taskNr = receivedPacket.identifier;
+		result.taskNr = taskNumber;
 		result.addresses.front().road.push_back(senderAddress);
 		memset(&raddr, 0, sizeof(raddr));
 
@@ -244,11 +245,12 @@ void* Module2::managerThreadWorker(void* argument)
 	{
 		Packet test = queueIntoModule->pop();
 		//do the traceroute
-
-		init(test.ip_address, 4);
+        std::cout<<"kura"<<test.identifier<<std::endl;
+		init(test.ip_address, test.identifier, 4);
 		startThreads();
 		joinThreads();
 		//get the results back
+        std::cout<<"KOŃ"<<std::endl;
 		module3.saveData(result);
 		//back to 1
 	}

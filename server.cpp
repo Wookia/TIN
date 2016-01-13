@@ -128,9 +128,9 @@ void Server::parsingTasksJSONToParsedData(Document& document, list<long long int
     for (SizeType i = 0; i < tasks.Size(); i++) {
         if(!tasks[i].HasMember("task"))
             throw(string("BAD REQUEST"));
-        if(!tasks[i]["task"].IsInt())
+        if(!tasks[i]["task"].IsInt64())
             throw(string("BAD REQUEST"));
-        tasksList.push_back((long long int) tasks[i]["task"].GetInt());
+        tasksList.push_back((long long int) tasks[i]["task"].GetInt64());
     }
 	return;
 }

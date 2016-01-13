@@ -33,7 +33,7 @@ class Module2
 		Module2();
 		Module2 (SynchronizedQueue<Packet>* queueIntoM2);
 		//ZMIENIC Z PACKET NA COS CO BEDZIE REPREZENTOWAC ZADANIE
-		int init(std::string& address, int newRetries);
+		int init(std::string& address, long long int taskNr, int newRetries);
 		int startThreads();
 		int joinThreads();
 		void join();
@@ -48,6 +48,7 @@ class Module2
 		Module3 module3;
 		pthread_t senderThread, receiverThread, managerThread;
 		std::string tracedAddress;
+        long long int taskNumber;
 		int nasz_socket, rc;
 		int retries;
 };

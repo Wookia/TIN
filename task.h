@@ -13,7 +13,7 @@ using namespace std;
 class Task {
 	public:
 		string* ip;
-		long long taskNumber;
+		long long int taskNumber;
 		int size;
 		
 		Task();

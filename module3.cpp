@@ -46,7 +46,7 @@ void Module3::saveData(Result result)
     }
     out.close();
 }
-Result Module3::getData(int taskNr)
+Result Module3::getData(long long int taskNr)
 {
     Result result;
     result.taskNr = taskNr;

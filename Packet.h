@@ -10,7 +10,8 @@ class Packet
 {
 	public:
 		struct iphdr ipheader;
-		int identifier, sequence_ttl;
+		int sequence_ttl;
+        long long int identifier;
 		int replyType;
 		std::string ip_address;
 		Packet& operator= (Packet copiedPacket)
