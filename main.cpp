@@ -26,7 +26,7 @@ using namespace std;
 pthread_t sendingThread, receivingThread;	//test thread
 pthread_t senderThread, receiverThread;	//'legit' threads
 //obstawiam w tej chwili Radek, ze to pewnie ma robic brak obslugi sygnalow. albo i nie. kto wie.
-void sigterm(int signo) 
+void sigterm(int signo)
 {
 }
 
@@ -42,13 +42,13 @@ void init_signal_handling()
     sigemptyset(&s.sa_mask);
     s.sa_flags = 0;
     sigaction(SIGUSR1, &s, NULL);
-    
+
     struct sigaction s2;
     s2.sa_handler = secondHandler;
     sigemptyset(&s2.sa_mask);
     s2.sa_flags = 0;
     sigaction(SIGUSR2, &s2, NULL);
-    
+
     sigset_t signalSet;
     sigemptyset(&signalSet);
     sigaddset(&signalSet, SIGUSR2);
@@ -66,7 +66,7 @@ void test()
 	zadanie2.ip_address = "216.58.209.67";
 	zadanie3.ip_address = "212.77.98.9";
 	queueToModule2.push(zadanie1);
-	
+
 	odebrane = queueFromModule2.pop();
 	for(Packet& pack:odebrane)
 		{
@@ -95,9 +95,6 @@ int main()
 
     init_signal_handling();
     test();
-	  
+
 
 }
-    
-    
-    

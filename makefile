@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS  = -g -Wall -std=c++0x -pthread
 
-# typing 'make' will invoke the first target entry in the file 
+# typing 'make' will invoke the first target entry in the file
 # (in this case the default target entry)
 # you can name this target entry anything, but "default" or "all"
 # are the most commonly used names by convention
@@ -27,11 +27,20 @@ main.o:  main.cpp Module2.h
 Module2.o:  Packet.h Module2.cpp Module2.h SynchronizedQueue.h
 	$(CC) $(CFLAGS) -c Module2.cpp
 
-SynchronizedQueue.o:  SynchronizedQueue.cpp SynchronizedQueue.h 
+SynchronizedQueue.o:  SynchronizedQueue.cpp SynchronizedQueue.h
 	$(CC) $(CFLAGS) -c SynchronizedQueue.cpp
 
-PacketGenerator.o:  PacketGenerator.cpp PacketGenerator.h 
+PacketGenerator.o:  PacketGenerator.cpp PacketGenerator.h
 	$(CC) $(CFLAGS) -c PacketGenerator.cpp
-
-clean: 
+server: server.o mainServerM1.o task.o module3.o
+	$(CC) $(CFLAGS) server.o mainServerM1.o task.o module3.o -o server
+mainServerM1.o: server.h mainServerM1.cpp
+	$(CC) $(CFLAGS) -c mainServerM1.cpp -o mainServerM1.o
+server.o: server.h server.cpp
+	$(CC) $(CFLAGS) -c server.cpp -o server.o
+task.o: task.h task.cpp
+	$(CC) $(CFLAGS) -c task.cpp -o task.o
+module3.o: module3.h module3.cpp
+	$(CC) $(CFLAGS) -c module3.cpp -o module3.o
+clean:
 	$(RM) TIN *.o *~
