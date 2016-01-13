@@ -2,8 +2,8 @@ CC = g++-5
 CFLAGS  = -g -Wall -std=c++0x -pthread
 default: TIN
 
-TIN:  PacketGenerator.o SynchronizedQueue.o server.o module3.o Module2.o   main.o
-	$(CC) $(CFLAGS) main.o SynchronizedQueue.o server.o  Module2.o module3.o PacketGenerator.o -o TIN 
+TIN:  PacketGenerator.o SynchronizedQueue.o task.o server.o module3.o Module2.o main.o
+	$(CC) $(CFLAGS) main.o SynchronizedQueue.o server.o  Module2.o module3.o task.o PacketGenerator.o -o TIN 
 
 main.o:  main.cpp SynchronizedQueue.h Module2.h server.h
 	$(CC) $(CFLAGS) -c main.cpp
