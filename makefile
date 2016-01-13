@@ -1,46 +1,30 @@
-CC = g++
+CC = g++-5
 CFLAGS  = -g -Wall -std=c++0x -pthread
-
-# typing 'make' will invoke the first target entry in the file
-# (in this case the default target entry)
-# you can name this target entry anything, but "default" or "all"
-# are the most commonly used names by convention
-#
 default: TIN
 
-# To create the executable file count we need the object files
-# countwords.o, counter.o, and scanner.o:
-#
-TIN:  PacketGenerator.o SynchronizedQueue.o Module2.o main.o
-	$(CC) $(CFLAGS) -o TIN main.o SynchronizedQueue.o Module2.o PacketGenerator.o
+TIN:  PacketGenerator.o SynchronizedQueue.o server.o module3.o Module2.o   main.o
+	$(CC) $(CFLAGS) main.o SynchronizedQueue.o server.o  Module2.o module3.o PacketGenerator.o -o TIN 
 
-# To create the object file countwords.o, we need the source
-# files countwords.c, scanner.h, and counter.h:
-#
-main.o:  main.cpp Module2.h
+main.o:  main.cpp SynchronizedQueue.h Module2.h server.h
 	$(CC) $(CFLAGS) -c main.cpp
 
-# To create the object file counter.o, we need the source files
-# counter.c and counter.h:
-#
-
-Module2.o:  Packet.h Module2.cpp Module2.h SynchronizedQueue.h
+Module2.o:  Packet.h SynchronizedQueue.h Module2.cpp Module2.h module3.h 
 	$(CC) $(CFLAGS) -c Module2.cpp
 
+PacketGenerator.o:  PacketGenerator.cpp PacketGenerator.h
+	$(CC) $(CFLAGS) -c PacketGenerator.cpp -o PacketGenerator.o
+	
+server.o: server.cpp server.h module3.h SynchronizedQueue.h task.h
+	$(CC) $(CFLAGS) -c server.cpp
+	
 SynchronizedQueue.o:  SynchronizedQueue.cpp SynchronizedQueue.h
 	$(CC) $(CFLAGS) -c SynchronizedQueue.cpp
-
-PacketGenerator.o:  PacketGenerator.cpp PacketGenerator.h
-	$(CC) $(CFLAGS) -c PacketGenerator.cpp
-server: server.o mainServerM1.o task.o module3.o
-	$(CC) $(CFLAGS) server.o mainServerM1.o task.o module3.o -o server
-mainServerM1.o: server.h mainServerM1.cpp
-	$(CC) $(CFLAGS) -c mainServerM1.cpp -o mainServerM1.o
-server.o: server.h server.cpp
-	$(CC) $(CFLAGS) -c server.cpp -o server.o
+	
 task.o: task.h task.cpp
-	$(CC) $(CFLAGS) -c task.cpp -o task.o
+	$(CC) $(CFLAGS) -c task.cpp
+	
 module3.o: module3.h module3.cpp
-	$(CC) $(CFLAGS) -c module3.cpp -o module3.o
+	$(CC) $(CFLAGS) -c module3.cpp
+	
 clean:
 	$(RM) TIN *.o *~

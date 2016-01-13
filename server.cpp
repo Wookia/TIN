@@ -5,7 +5,8 @@ void* childThreadFunctionDel(void* pack) {
 	return reinterpret_cast<Server*>(packa.delegate)->childThreadFunction(packa.connection);
 }
 
-Server::Server() {
+Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
+	queueInto= queueToModule2;
 	socketServer = socket(AF_INET, SOCK_STREAM, 0);
 	if (socketServer == -1) {
 		perror("socket");
@@ -154,13 +155,15 @@ void Server::logger(int connection) {
 
                 for (int i=0; i<task.size; i++) {
                     cout << "ip[" << i << "]: " <<task.ip[i] << endl;
+										Packet packet;
+										packet.ip_address =task.ip[i];
+										packet.identifier = task.taskNumber;
+										queueInto->push(packet);
                 }
 
                 json = createResponseToAddressesJSON(task.taskNumber, HTTPcode);
 
                 writeJSON(connection, json, HTTPcode);
-
-                doTraceroute();
             }
             else if (document.HasMember("tasks")) {
                 list<long long int> tasksList;

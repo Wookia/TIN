@@ -21,6 +21,7 @@
 #include "PacketGenerator.h"
 #include "Packet.h"
 #include "SynchronizedQueue.h"
+#include "module3.h"
 #include <string>
 #include <list>
 
@@ -30,7 +31,7 @@ class Module2
 {
 	public:
 		Module2();
-		Module2 (SynchronizedQueue<Packet>* queueIntoM2, SynchronizedQueue<std::list<Packet>>* queueOutFromM2);
+		Module2 (SynchronizedQueue<Packet>* queueIntoM2);
 		//ZMIENIC Z PACKET NA COS CO BEDZIE REPREZENTOWAC ZADANIE
 		int init(std::string& address, int newRetries);
 		int startThreads();
@@ -40,11 +41,11 @@ class Module2
 		void* receiverThreadWorker(void*);
 		void* managerThreadWorker(void*);
 		sigset_t outselect, inselect;
-		
+
 	private:
 		SynchronizedQueue<Packet>* queueIntoModule;
-		SynchronizedQueue<std::list<Packet>>* queueOut;
-		std::list<Packet> traceroutePath;
+		Result result;
+		Module3 module3;
 		pthread_t senderThread, receiverThread, managerThread;
 		std::string tracedAddress;
 		int nasz_socket, rc;

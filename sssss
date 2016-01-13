@@ -1,0 +1,15 @@
+CC = g++
+CFLAGS  = -g -Wall -std=c++0x -pthread
+DEPS = $(wildcard *.h)
+SRC = $(wildcard *.cpp)
+OBJ = $(SRC:.cpp=.o)
+TARGET = okna
+
+%.o: %.cpp $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(TARGET): $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+clean:
+	rm -f ./*.o $(TARGET)

@@ -21,8 +21,9 @@
 #include "rapidjson/document.h"
 
 #include "task.h"
+#include "SynchronizedQueue.h"
 #include "module3.h"
-
+#include "Packet.h"
 using namespace std;
 using namespace rapidjson;
 
@@ -41,10 +42,11 @@ class Server {
 		struct sockaddr_in server;
 		struct sockaddr_in client;
 		Module3 dataReciver;
+		SynchronizedQueue<Packet>* queueInto;
 
 	public:
 		Server();
-
+		Server(SynchronizedQueue<Packet>* queueToModule2);
 		void* childThreadFunction(int connection);
 		void logger(int connection);
 		string reading(int connection);

@@ -17,9 +17,8 @@
 #include <iostream>
 #include "Module2.h"
 #include <list>
-#include "Packet.h"
+#include "server.h"
 #include "SynchronizedQueue.h"
-
 
 using namespace std;
 
@@ -57,36 +56,10 @@ void init_signal_handling()
 }
 void test()
 {
-	std::list<Packet> odebrane;
+	list<Packet> odebrane;
 	SynchronizedQueue<Packet> queueToModule2;
-	SynchronizedQueue<std::list<Packet>> queueFromModule2;
-	Module2 module2(&queueToModule2,&queueFromModule2);
-	Packet zadanie1,zadanie2,zadanie3;
-	zadanie1.ip_address = "8.8.8.8";
-	zadanie2.ip_address = "216.58.209.67";
-	zadanie3.ip_address = "212.77.98.9";
-	queueToModule2.push(zadanie1);
-
-	odebrane = queueFromModule2.pop();
-	for(Packet& pack:odebrane)
-		{
-			cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
-		}
-		cout << "koniec zadania" << endl;
-		queueToModule2.push(zadanie2);
-	odebrane = queueFromModule2.pop();
-	for(Packet& pack:odebrane)
-		{
-			cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
-		}
-		cout << "koniec zadania" << endl;
-		queueToModule2.push(zadanie3);
-	odebrane = queueFromModule2.pop();
-	for(Packet& pack:odebrane)
-		{
-			cout << "sciezka: " << pack.ip_address << " ttl " << pack.sequence_ttl << endl;
-		}
-		cout << "koniec zadania" << endl;
+	Module2 module2(&queueToModule2);
+	Server server(&queueToModule2);
 	module2.join();
 }
 
