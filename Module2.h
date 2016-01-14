@@ -31,6 +31,7 @@ class Module2
 {
 	public:
 		Module2();
+		void closeModule();
 		Module2 (SynchronizedQueue<Packet>* queueIntoM2);
 		//ZMIENIC Z PACKET NA COS CO BEDZIE REPREZENTOWAC ZADANIE
 		int init(std::string& address, long long int taskNr, int newRetries);
