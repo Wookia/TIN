@@ -24,7 +24,7 @@ void Module2::closeModule()
 {
 	pthread_kill(senderThread,SIGKILL);
 	pthread_kill(receiverThread,SIGKILL);
-	close(nasz_socket)
+	close(nasz_socket);
 }
 
 int Module2::init(string& address, long long int taskNr, int newRetries)

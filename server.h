@@ -38,7 +38,7 @@ class Server {
 		int socketServer;
 		int portNumber;
 		const char* IPAddress;
-		string dataSent;
+		stringstream dataSent;
 		struct sockaddr_in server;
 		struct sockaddr_in client;
 		Module3 dataReciver;

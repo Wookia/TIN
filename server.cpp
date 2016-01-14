@@ -220,8 +220,9 @@ string Server::reading(int connection) {
 }
 
 void Server::writing(int connection) {
-	dataSent = "HTTP/1.1 200 OK\r\nServer: TIN/1.0\r\nContent-Lenght: 67\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE html><html><body><h1>Aj aj, kapitanie</h1></body></html>";
-	if (send(connection, dataSent.c_str(), dataSent.length(), 0) == -1) {
+	dataSent << "HTTP/1.1 200 OK\r\nServer: TIN/1.0\r\nContent-Lenght: 67\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE html><html><body><h1>Aj aj, kapitanie</h1></body></html>";
+    string dataToSend = dataSent.str();
+    if (send(connection, dataToSend.c_str(), dataSent.tellp(), 0) == -1) {
 		perror("writing");
 		exit(1);
 	}
@@ -271,7 +272,7 @@ string Server::createResponseToTasksJSON(list<Result>& results, int& HTTPcode) {
 			char taskNr[100];
 			Result result = results.front();
 			results.pop_front();
-			sprintf(taskNr, "%lld", result.taskNr);=
+			sprintf(taskNr, "%lld", result.taskNr);
 			json += taskNr;
 			json += ", \"addresses\": [ ";
 			while (!result.addresses.empty()) {
@@ -282,7 +283,7 @@ string Server::createResponseToTasksJSON(list<Result>& results, int& HTTPcode) {
 					string address = traceroute.road.front();
 					traceroute.road.pop_front();
 					json += "{ \"address\": \"";
-					json += address.c_str();
+					json += address;
 					json += "\"}";
 					if (!traceroute.road.empty()) {
 						json += ", ";
@@ -309,21 +310,21 @@ string Server::createResponseToTasksJSON(list<Result>& results, int& HTTPcode) {
 //writing HTTP Response with appropiate JSON
 void Server::writeJSON(int connection, string& json, int HTTPcode) {
 	if(HTTPcode == 404) {
-		dataSent = "HTTP/1.1" + to_string(HTTPcode) + "Not Found\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
+		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Not Found\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
 			
 	}
     else if(HTTPcode == 400) {
-        dataSent = "HTTP/1.1" + to_string(HTTPcode) + "Bad Request\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
+        dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Bad Request\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
     }
 	else {
-		dataSent = "HTTP/1.1" + to_string(HTTPcode) + "Ok\r\nServer: TIN/1.0\r\nContent-Lenght: "+to_string(json.size())+"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"+json+"";
+		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Ok\r\nServer: TIN/1.0\r\nContent-Lenght: "<<to_string(json.size())<<"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"<<json;
 	}
-
-	if (send(connection, dataSent.c_str(), dataSent.length(), 0) == -1) {
+    string dataToSend = dataSent.str();
+	if (send(connection, dataToSend.c_str(), dataSent.tellp(), 0) == -1) {
 		perror("sendJSON");
 		exit(1);
 	}
-
+    dataSent.str("");
 	return;
 }
 

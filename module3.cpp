@@ -68,7 +68,7 @@ Result Module3::getData(long long int taskNr)
         {
             Traceroute traceroute;
             std::string ssr(line);
-            std::cout<<ssr.c_str()<<std::endl;
+            ssr.pop_back();
             std::size_t i = 0;
             std::size_t j = 0;
             while (i!=std::string::npos)
