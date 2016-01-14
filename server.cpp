@@ -71,7 +71,7 @@ Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
 void* Server::childThreadFunction(int connection) {
 	cout << "Thread No: " << pthread_self() << endl;
 
-	logger(connection);
+	communicationCenter(connection);
 	close(connection);
 
 	return NULL;
@@ -137,8 +137,8 @@ void Server::parsingTasksJSONToParsedData(Document& document, list<long long int
 	return;
 }
 
-// Logger reads HTTP message and writes the HTTP answer to client
-void Server::logger(int connection) {
+// CommunicationCenter reads HTTP message and writes the HTTP answer to client
+void Server::communicationCenter(int connection) {
 	//first read, then respond appriopiately
 	string dataReceived=reading(connection);
     string json;
@@ -154,7 +154,7 @@ void Server::logger(int connection) {
                 Task task;
                 parsingAddressesJSONToTask(document, task);
 
-                cout << "Logger, Task nr: " << task.taskNumber << endl;
+                cout << "CommunicationCenter, Task nr: " << task.taskNumber << endl;
 
                 for (int i=0; i<task.size; i++) {
                     cout << "ip[" << i << "]: " <<task.ip[i] << endl;
@@ -237,7 +237,7 @@ string Server::createResponseToAddressesJSON(long long int taskNumber, int& HTTP
 
 	json += "{ \"task\": ";
 	char taskNr[100];
-	sprintf(taskNr, "%Ld", taskNumber);
+	sprintf(taskNr, "%lld", taskNumber);
 	json += taskNr;
 	json += " }";
 
@@ -271,7 +271,7 @@ string Server::createResponseToTasksJSON(list<Result>& results, int& HTTPcode) {
 			char taskNr[100];
 			Result result = results.front();
 			results.pop_front();
-			sprintf(taskNr, "%lld", result.taskNr);
+			sprintf(taskNr, "%lld", result.taskNr);=
 			json += taskNr;
 			json += ", \"addresses\": [ ";
 			while (!result.addresses.empty()) {

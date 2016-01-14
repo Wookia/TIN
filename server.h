@@ -48,7 +48,7 @@ class Server {
 		Server();
 		Server(SynchronizedQueue<Packet>* queueToModule2);
 		void* childThreadFunction(int connection);
-		void logger(int connection);
+		void communicationCenter(int connection);
 		string reading(int connection);
 		void writing(int connection);
 		void doTraceroute();

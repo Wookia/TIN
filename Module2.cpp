@@ -20,6 +20,13 @@ Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2)
 	pthread_create(&managerThread, NULL, &managerThreadWorkerDel, reinterpret_cast<void*>(this));
 }
 
+void Module2::closeModule()
+{
+	pthread_kill(senderThread,SIGKILL);
+	pthread_kill(receiverThread,SIGKILL);
+	close(nasz_socket)
+}
+
 int Module2::init(string& address, long long int taskNr, int newRetries)
 {
 	tracedAddress = address;

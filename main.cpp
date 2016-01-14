@@ -22,22 +22,32 @@
 
 using namespace std;
 
-pthread_t sendingThread, receivingThread;	//test thread
-pthread_t senderThread, receiverThread;	//'legit' threads
-//obstawiam w tej chwili Radek, ze to pewnie ma robic brak obslugi sygnalow. albo i nie. kto wie.
-void sigterm(int signo)
+SynchronizedQueue<Packet>* queuePointer;
+Module2* module2Pointer;
+Server* serverPointer;
+
+void firstHandler(int signo)
 {
+	
 }
 
 void secondHandler(int signo)
 {
+	
+}
+
+void sigintHandler(int signo)
+{
+	printf("dziala?\n");
+	if(module2Pointer!=NULL)
+		module2Pointer->closeModule();
 }
 
 
 void init_signal_handling()
 {
 	struct sigaction s;
-    s.sa_handler = sigterm;
+    s.sa_handler = firstHandler;
     sigemptyset(&s.sa_mask);
     s.sa_flags = 0;
     sigaction(SIGUSR1, &s, NULL);
@@ -47,27 +57,35 @@ void init_signal_handling()
     sigemptyset(&s2.sa_mask);
     s2.sa_flags = 0;
     sigaction(SIGUSR2, &s2, NULL);
-
+    
+    struct sigaction s3;
+    s3.sa_handler = sigintHandler;
+    sigemptyset(&s3.sa_mask);
+    s3.sa_flags = 0;
+    sigaction(SIGINT, &s3, NULL);
+    
     sigset_t signalSet;
+    sigset_t unblockedSignalsSet;
     sigemptyset(&signalSet);
+    sigemptyset(&unblockedSignalsSet);
     sigaddset(&signalSet, SIGUSR2);
     sigaddset(&signalSet, SIGUSR1);
+    sigaddset(&unblockedSignalsSet, SIGINT);
     sigprocmask(SIG_BLOCK, &signalSet, NULL);
-}
-void test()
-{
-	list<Packet> odebrane;
-	SynchronizedQueue<Packet> queueToModule2;
-	Module2 module2(&queueToModule2);
-	Server server(&queueToModule2);
-	module2.join();
+    sigprocmask(SIG_UNBLOCK, &unblockedSignalsSet, NULL);
 }
 
 int main()
 {
-
     init_signal_handling();
-    test();
+    SynchronizedQueue<Packet> queueToModule2;
+    queuePointer = &queueToModule2;
+	Module2 module2(&queueToModule2);
+	module2Pointer = &module2;
+	Server server(&queueToModule2);
+	serverPointer = &server;
+	
+	module2.join();
 
 
 }
