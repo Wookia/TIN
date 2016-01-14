@@ -5,6 +5,13 @@ void* childThreadFunctionDel(void* pack) {
 	return reinterpret_cast<Server*>(packa.delegate)->childThreadFunction(packa.connection);
 }
 
+void Server::closeServer()
+{
+	close(socketServer);
+	//free the allocated memory
+	//kill all the child threads
+}
+
 Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
 	queueInto= queueToModule2;
 	socketServer = socket(AF_INET, SOCK_STREAM, 0);

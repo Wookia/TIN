@@ -47,6 +47,7 @@ class Server {
 	public:
 		Server();
 		Server(SynchronizedQueue<Packet>* queueToModule2);
+		void closeServer();
 		void* childThreadFunction(int connection);
 		void communicationCenter(int connection);
 		string reading(int connection);

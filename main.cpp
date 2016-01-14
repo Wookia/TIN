@@ -38,7 +38,8 @@ void secondHandler(int signo)
 
 void sigintHandler(int signo)
 {
-	printf("dziala?\n");
+	if(serverPointer!=NULL)
+		serverPointer->closeServer();
 	if(module2Pointer!=NULL)
 		module2Pointer->closeModule();
 }
@@ -70,9 +71,9 @@ void init_signal_handling()
     sigemptyset(&unblockedSignalsSet);
     sigaddset(&signalSet, SIGUSR2);
     sigaddset(&signalSet, SIGUSR1);
-    sigaddset(&unblockedSignalsSet, SIGINT);
+    //sigaddset(&unblockedSignalsSet, SIGINT);
     sigprocmask(SIG_BLOCK, &signalSet, NULL);
-    sigprocmask(SIG_UNBLOCK, &unblockedSignalsSet, NULL);
+    //sigprocmask(SIG_UNBLOCK, &unblockedSignalsSet, NULL);
 }
 
 int main()
@@ -86,6 +87,6 @@ int main()
 	serverPointer = &server;
 	
 	module2.join();
-
-
+	
+	return 0;
 }

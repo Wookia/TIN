@@ -22,8 +22,7 @@ Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2)
 
 void Module2::closeModule()
 {
-	pthread_kill(senderThread,SIGKILL);
-	pthread_kill(receiverThread,SIGKILL);
+	if(pthread_kill(managerThread, 0) == 0) pthread_cancel(managerThread);
 	close(nasz_socket);
 }
 
@@ -246,8 +245,8 @@ void* Module2::receiverThreadWorker(void* argument)
 
 void* Module2::managerThreadWorker(void* argument)
 {
-	//getAJob() //narazie petla na 3 zadanka
-	for(int i=0;i<3;i++)
+	//getAJob()
+	while(true)
 	{
 		Packet test = queueIntoModule->pop();
 		//do the traceroute
