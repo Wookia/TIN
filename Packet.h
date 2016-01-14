@@ -13,6 +13,8 @@ class Packet
 		int sequence_ttl;
         long long int identifier;
 		int replyType;
+        bool isLast;
+        
 		std::string ip_address;
 		Packet& operator= (Packet copiedPacket)
 		{

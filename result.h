@@ -7,6 +7,7 @@ class Result
 {
     public:
         long long int taskNr;
+        bool isLast;
         std::list<Traceroute> addresses;
         Result& operator= (Result copiedResult)
         {

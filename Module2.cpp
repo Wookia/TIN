@@ -22,7 +22,6 @@ Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2)
 
 int Module2::init(string& address, long long int taskNr, int newRetries)
 {
-	Module3 module3;
 	tracedAddress = address;
     taskNumber = taskNr;
 	retries = newRetries;
@@ -251,6 +250,7 @@ void* Module2::managerThreadWorker(void* argument)
 		joinThreads();
 		//get the results back
         std::cout<<"KOŃ"<<std::endl;
+        result.isLast = test.isLast;
 		module3.saveData(result);
 		//back to 1
 	}

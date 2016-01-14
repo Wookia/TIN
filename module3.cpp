@@ -28,8 +28,11 @@ void Module3::createFolder()
 void Module3::saveData(Result result)
 {
     std::ostringstream ss;
-    ss << this->repoPath << result.taskNr << ".txt";
-    std::ofstream out((ss.str()).c_str());
+    ss << this->repoPath << result.taskNr << "r.txt";
+    std::ostringstream ssa;
+    ssa << this->repoPath << result.taskNr << ".txt";
+    std::ofstream out;
+    out.open((ss.str()).c_str(), std::ios::app);
     while (!result.addresses.empty())
     {
         Traceroute traceroute = result.addresses.front();
@@ -45,15 +48,20 @@ void Module3::saveData(Result result)
         result.addresses.pop_front();
     }
     out.close();
+    if(result.isLast)
+        rename((ss.str()).c_str(), (ssa.str()).c_str());
 }
 Result Module3::getData(long long int taskNr)
 {
+    std::cout << repoPath << std::endl;
     Result result;
     result.taskNr = taskNr;
     std::string line;
     std::ostringstream ss;
-    ss << this->repoPath << taskNr << ".txt";
-    std::ifstream in((ss.str()).c_str());
+    ss << repoPath << taskNr << ".txt";
+    std::ifstream in;
+    std::cout<<(ss.str()).c_str()<<std::endl;
+    in.open((ss.str()).c_str());
     if (in.is_open())
     {
         while(getline(in, line))
