@@ -48,6 +48,7 @@ class Module2
 		Result result;
 		Module3 module3;
 		pthread_t senderThread, receiverThread, managerThread;
+		sem_t senderSem, receiverSem;
 		std::string tracedAddress;
         long long int taskNumber;
 		int nasz_socket, rc;

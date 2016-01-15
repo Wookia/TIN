@@ -38,6 +38,7 @@ void secondHandler(int signo)
 
 void sigintHandler(int signo)
 {
+	
 	if(serverPointer!=NULL)
 		serverPointer->closeServer();
 	if(module2Pointer!=NULL)
@@ -66,9 +67,9 @@ void init_signal_handling()
     sigaction(SIGINT, &s3, NULL);
     
     sigset_t signalSet;
-    sigset_t unblockedSignalsSet;
+    //sigset_t unblockedSignalsSet;
     sigemptyset(&signalSet);
-    sigemptyset(&unblockedSignalsSet);
+    //sigemptyset(&unblockedSignalsSet);
     sigaddset(&signalSet, SIGUSR2);
     sigaddset(&signalSet, SIGUSR1);
     //sigaddset(&unblockedSignalsSet, SIGINT);

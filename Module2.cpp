@@ -10,6 +10,8 @@ void* managerThreadWorkerDel(void* delegate)
 
 Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2)
 {
+	sem_init(&senderSem, 0, 0);
+	sem_init(&receiverSem, 0, 0);
 	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 	queueIntoModule = queueIntoM2;
 	if (nasz_socket == -1)
@@ -22,6 +24,15 @@ Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2)
 
 void Module2::closeModule()
 {
+	int test = 0;
+	sem_getvalue(&senderSem,&test);
+	if(test != 0) pthread_cancel(senderThread);
+	
+	sem_getvalue(&receiverSem,&test);
+	if(test != 0) pthread_cancel(receiverThread);
+	
+	sem_destroy(&senderSem);
+	sem_destroy(&receiverSem);
 	if(pthread_kill(managerThread, 0) == 0) pthread_cancel(managerThread);
 	close(nasz_socket);
 }
@@ -64,6 +75,7 @@ void* senderThreadWorkerDel(void* delegate)
 
 void* Module2::senderThreadWorker(void* argument)
 {
+	sem_post(&senderSem);
 	fd_set set;
 	FD_ZERO(&set);
 	FD_SET(0, &set);
@@ -131,6 +143,7 @@ void* Module2::senderThreadWorker(void* argument)
 			ttl--;
 		}
 	}
+	sem_wait(&senderSem);
 	return NULL;
 }
 
@@ -141,6 +154,7 @@ void* receiverThreadWorkerDel(void* delegate)
 
 void* Module2::receiverThreadWorker(void* argument)
 {
+	sem_post(&receiverSem);
 	fd_set set2;
 	FD_ZERO(&set2);
 	FD_SET(nasz_socket, &set2);
@@ -232,12 +246,14 @@ void* Module2::receiverThreadWorker(void* argument)
 		if(senderAddress == tracedAddress)
 		{
 			printf("Uff, juz po wszystkim. Odbieracz odmelodwuje sie!\n");
+			sem_wait(&receiverSem);
 			return NULL;
 		}
 
 		printf("Wysylanie sygnalu\n");
 		pthread_kill(senderThread,SIGUSR2);
 	}
+	sem_wait(&receiverSem);
 	return NULL;
 }
 
