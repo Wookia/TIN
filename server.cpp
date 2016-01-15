@@ -53,6 +53,12 @@ Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
 		connection = accept(socketServer, (struct sockaddr*) &client, &sockaddrClient);
 		if (connection == -1) {
 			perror("accept");
+			
+			//przy ctrl+c nie ma zrobic exita, tylko grzecznie sobie wyjsc i potem dac po sobie posprzatac close
+			//oczywiscie nie ma mowy, zeby ten while(1) byl w konstruktorze
+			
+			if(errno == EINTR)
+				return;
 			exit(1);
 		}
 		if (i == 1) {

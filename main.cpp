@@ -88,6 +88,7 @@ int main()
 	serverPointer = &server;
 	
 	module2.join();
+	printf("Wszystko zamknelo sie poprawnie!\n");
 	
 	return 0;
 }
