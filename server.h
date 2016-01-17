@@ -17,6 +17,8 @@
 #include "errno.h"
 #include <arpa/inet.h>
 #include <iostream>
+#include <sstream>
+#include <vector>
 
 #include "rapidjson/document.h"
 
@@ -49,6 +51,11 @@ class Server {
 		int processCount;
 		Module3 dataReciver;
 		SynchronizedQueue<Packet>* queueInto;
+		std::vector<std::string> splitData;
+		
+		void tokenize(const std::string& str, std::vector<std::string>& tokens,const std::string& delimiters, bool trimEmpty);
+		bool checkIfBracketsPaired(std::string temp);
+		
 
 	public:
 		Server(SynchronizedQueue<Packet>* queueToModule2);

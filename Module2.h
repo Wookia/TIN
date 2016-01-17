@@ -24,6 +24,7 @@
 #include "module3.h"
 #include <string>
 #include <list>
+#include <fstream>
 
 extern "C" void* senderThreadWorkerDel(void*);
 extern "C" void* receiverThreadWorkerDel(void*);
@@ -53,6 +54,7 @@ class Module2
         long long int taskNumber;
 		int nasz_socket, rc;
 		int retries;
+		std::ofstream module2Output;
 };
 
 #endif

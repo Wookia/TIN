@@ -99,7 +99,7 @@ void Server::startThreads() {
 			pack.connection = connection;
 			pthread_create(&childThread[i], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
 			processCount++;
-			goto end;
+			//goto end;
 		}
 		else for (j=0; j<TABLE_SIZE; j++) {
 			printf("\nBIERZEMY NOWE\n");
@@ -111,10 +111,11 @@ void Server::startThreads() {
 				pack.connection = connection;
 				pthread_create(&childThread[j], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
 				processCount++;
-				goto end;
+				//goto end;
+				break;
 			}
 		}
-		end: ;
+		//end: ;
 		i++;
 		if (i == TABLE_SIZE) {
 			printf("\nCZYSCIMY!\n");
@@ -288,14 +289,77 @@ void Server::communicationCenter(int connection) {
 
 string Server::reading(int connection) {
 	char dataReceived[10000];
-	if (recv(connection, dataReceived, sizeof(dataReceived), 0) == -1) {
-		perror("reading");
-		exit(1);
-	}
+	int bytesReceived;
+	int contentLength = 0;
+	int sizeOfMessage = 0;
+	bool foundEnd = false;
+	bool foundEndOfHeader = false;
+	bool foundContentLength = false;
+	string temp,temp2;
+	std::size_t found;
+	do
+	{
+		if ((bytesReceived = recv(connection, dataReceived, sizeof(dataReceived), 0)) == -1) {
+			perror("reading");
+			exit(1);
+		}
+		temp.append(dataReceived,bytesReceived);
+		found = temp.find("\r\n\r\n",0,4);
+		if (found!=std::string::npos) {
+			std::cout << "Znaleziono koniec naglowka http " << found << endl;
+			foundEndOfHeader = true;
+			if((temp[0])== 'G') {
+				foundEnd = true;
+				}
+			else
+			{ 
+				tokenize(temp,splitData,"\r\n",false);
+				std::vector<std::string>::iterator it;
+				
+				for(it=splitData.begin() ; it < splitData.end(); it++ ) {
+					if((*it).find("Content-Length") != std::string::npos) {
+						std::size_t tempfound = (*it).find(":");
+						std::string contentLengthString = (*it).substr(tempfound+1);
+						contentLength = std::stoi( contentLengthString );
+						sizeOfMessage = contentLength + found + 4;
+						foundContentLength = true;
+						break;
+					}
+				}
+				if(foundContentLength==false) {
+					std::cout << "Nie znaleziono content length" << std::endl;
+						//exit(3);
+					}
+				if(contentLength == 0)
+				{
+					std::cout << "Zerowa zawartosc contentLength?" << std::endl;
+					//exit(1);
+				}
+				if(sizeOfMessage == 0)
+				{
+					std::cout << "Zerowa wielkosc wiadomosci?" << std::endl;
+					//exit(2);
+				}
+				if(bytesReceived>=sizeOfMessage)
+				{
+					std::cout << "Pobrano wystarczajaca ilosc danych" << std::endl;
+					foundEnd = true;
+				}
+			}
 	
-	cout << dataReceived << endl;
+		}
+		else {
+			std::cout << "Nie Znaleziono konca naglowka http" << std::endl;
+			foundEnd = false;
+		}
+		
+
 	
-	string data = dataReceived;
+		//cout << dataReceived << endl;
+	
+	} while(foundEnd==false);
+	
+	string data = temp;
 	return data;
 }
 
@@ -408,4 +472,56 @@ void Server::writeJSON(int connection, string& json, int HTTPcode) {
     dataSent.str("");
     
 	return;
+}
+
+/*std::vector<std::string>& Server::split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+
+std::vector<std::string> Server::split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
+} */
+
+void Server::tokenize(const std::string& str, std::vector<std::string>& tokens,
+              const std::string& delimiters = " ", bool trimEmpty = false)
+{
+   std::string::size_type pos, lastPos = 0;
+
+   using value_type = typename std::vector<std::string>::value_type;
+   using size_type  = typename std::vector<std::string>::size_type;
+
+   while(true)
+   {
+      pos = str.find_first_of(delimiters, lastPos);
+      if(pos == std::string::npos)
+      {
+         pos = str.length();
+
+         if(pos != lastPos || !trimEmpty)
+            tokens.push_back(value_type(str.data()+lastPos,
+                  (size_type)pos-lastPos ));
+
+         break;
+      }
+      else
+      {
+         if(pos != lastPos || !trimEmpty)
+            tokens.push_back(value_type(str.data()+lastPos,
+                  (size_type)pos-lastPos ));
+      }
+
+      lastPos = pos + 1;
+   }
+}
+
+bool Server::checkIfBracketsPaired(std::string temp){
+	
 }

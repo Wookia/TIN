@@ -19,11 +19,16 @@ Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2)
 		perror("socket:");
 		exit(1);
 	}
+	module2Output.open("module2Output.txt");
+	if(!module2Output.is_open()) {
+		cout << "UWAGA WYJSCIE MODULU 2 NIE OTWARTE" << endl;
+	}
 	pthread_create(&managerThread, NULL, &managerThreadWorkerDel, reinterpret_cast<void*>(this));
 }
 
 void Module2::closeModule()
 {
+	module2Output.close();
 	int test = 0;
 	sem_getvalue(&senderSem,&test);
 	if(test != 0) pthread_cancel(senderThread);
@@ -105,7 +110,7 @@ void* Module2::senderThreadWorker(void* argument)
 	{
 		setsockopt(nasz_socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
 		packetgen.generatePacket(header, data, 1, ttl);
-		cout << "Wysylanie pakietu TTL " << ttl << endl;
+		module2Output << "Wysylanie pakietu TTL " << ttl << endl;
 		rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
 				0, (struct sockaddr*)&addr, sizeof(addr));
 		if(rc == -1)
@@ -125,7 +130,7 @@ void* Module2::senderThreadWorker(void* argument)
 		{
 			if(pthread_kill(receiverThread, 0) != 0)
 			{
-				printf("Oho, odbieracz juz nie zyje. Wysylacz zegna!\n");
+				module2Output << "Oho, odbieracz juz nie zyje. Wysylacz zegna!" << endl;
 				break;
 			}
 			loopRetries--;
@@ -158,7 +163,7 @@ void* Module2::receiverThreadWorker(void* argument)
 	fd_set set2;
 	FD_ZERO(&set2);
 	FD_SET(nasz_socket, &set2);
-	cout << "NASZ SOCKET MA WARTOSC " << nasz_socket << endl;
+	module2Output << "ID SOCKETU: " << nasz_socket << endl;
 
 	struct timespec timerSet;
 	timerSet.tv_sec = 20;
@@ -185,7 +190,7 @@ void* Module2::receiverThreadWorker(void* argument)
 		count = pselect(4, &set2, NULL, NULL, &timerSet, NULL);
 		if(count==0)
 		{
-				cout << "count = " << count << endl;
+				module2Output << "count = " << count << endl;
 				retries--;
 				if(retries==0)
 					return NULL;
@@ -205,31 +210,34 @@ void* Module2::receiverThreadWorker(void* argument)
 			exit(1);
 		}
 
-		printf("Odberano %d bajtow\n",rc);
+
+		module2Output << "Odebrano "<< rc << " bajtow"  << endl;
 		iphdr = (struct iphdr*)rbuf;
 
 		if (iphdr->protocol != IPPROTO_ICMP)
 		{
 			fprintf(stderr, "Expected ICMP packet, got %u\n", iphdr->protocol);
+			module2Output << "Expected ICMP packet, got " << iphdr->protocol << endl;
 			exit(1);
 		}
 		icmphdr = (struct icmphdr*)(rbuf + (iphdr->ihl * 4));
-		printf("Dlugosc headera ip %d\n", iphdr->ihl);
+		module2Output << "Dlugosc headera ip "<< iphdr->ihl << endl;
 		//printf("Dlugosc headera icmp %d\n", icmphdr->ihl);
 		if (!(icmphdr->type == ICMP_ECHOREPLY ||  icmphdr->type == ICMP_TIME_EXCEEDED))
 		{
 			fprintf(stderr, "Expected ICMP echo-reply, got %u\n", icmphdr->type);
+			module2Output << "Expected ICMP echo-reply, got " << icmphdr->type << endl;
 			exit(1);
 		}
 		if(icmphdr->type == ICMP_TIME_EXCEEDED)
 		{
-			printf("TIME EXCEEDED\n");
+			module2Output << "TIME EXCEEDED" << endl;
 			icmphdr = (struct icmphdr*)(rbuf + (iphdr->ihl * 4) + offset);
 		}
-		printf("Otrzymana sekwencja: %x",icmphdr->un.echo.sequence);
-		printf(" Identifier %x\n", icmphdr->un.echo.id);
+		module2Output << "Otrzymana sekwencja:" << icmphdr->un.echo.sequence<< endl;
+		module2Output << "Identyfikator: " << icmphdr->un.echo.id<< endl;
 		std::string senderAddress = inet_ntop(AF_INET, &(raddr.sin_addr), str, INET_ADDRSTRLEN);
-		cout << senderAddress << " Rodzina: " << raddr.sin_family <<" " << endl;
+		module2Output << senderAddress << " Rodzina: " << raddr.sin_family <<" " << endl;
 		Packet receivedPacket;
 
 		//JEZELI CHCEMY TRZYMAC CALA STRUKTURE IPHDR TRZEBA ZROBIC JEJ KOPIOWANIE DO KLASY PACKET
@@ -237,7 +245,7 @@ void* Module2::receiverThreadWorker(void* argument)
 		receivedPacket.sequence_ttl = icmphdr->un.echo.sequence;
 		receivedPacket.replyType = icmphdr->type;
 		receivedPacket.ip_address = senderAddress;
-		cout << "ip_address:" << receivedPacket.ip_address << endl;
+		module2Output << "ip_address:" << receivedPacket.ip_address << endl;
 		result.taskNr = taskNumber;
 		result.addresses.front().road.push_back(senderAddress);
 		memset(&raddr, 0, sizeof(raddr));
@@ -245,12 +253,12 @@ void* Module2::receiverThreadWorker(void* argument)
 
 		if(senderAddress == tracedAddress)
 		{
-			printf("Uff, juz po wszystkim. Odbieracz odmelodwuje sie!\n");
+			module2Output << "Uff, juz po wszystkim. Odbieracz odmelodwuje sie!" << endl;
 			sem_wait(&receiverSem);
 			return NULL;
 		}
 
-		printf("Wysylanie sygnalu\n");
+		module2Output << "Wysylanie sygnalu!" << endl;
 		pthread_kill(senderThread,SIGUSR2);
 	}
 	sem_wait(&receiverSem);
@@ -266,12 +274,10 @@ void* Module2::managerThreadWorker(void* argument)
 	{
 		Packet test = queueIntoModule->pop();
 		//do the traceroute
-        std::cout<<"kura"<<test.identifier<<std::endl;
 		init(test.ip_address, test.identifier, 4);
 		startThreads();
 		joinThreads();
 		//get the results back
-        std::cout<<"KOŃ"<<std::endl;
         result.isLast = test.isLast;
 		module3.saveData(result);
 		//back to 1
