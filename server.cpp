@@ -293,7 +293,6 @@ string Server::reading(int connection) {
 	int contentLength = 0;
 	int sizeOfMessage = 0;
 	bool foundEnd = false;
-	bool foundEndOfHeader = false;
 	bool foundContentLength = false;
 	string temp,temp2;
 	std::size_t found;
@@ -307,7 +306,6 @@ string Server::reading(int connection) {
 		found = temp.find("\r\n\r\n",0,4);
 		if (found!=std::string::npos) {
 			std::cout << "Znaleziono koniec naglowka http " << found << endl;
-			foundEndOfHeader = true;
 			if((temp[0])== 'G') {
 				foundEnd = true;
 				}
@@ -328,21 +326,18 @@ string Server::reading(int connection) {
 				}
 				if(foundContentLength==false) {
 					std::cout << "Nie znaleziono content length" << std::endl;
-						//exit(3);
 					}
 				if(contentLength == 0)
 				{
 					std::cout << "Zerowa zawartosc contentLength?" << std::endl;
-					//exit(1);
 				}
 				if(sizeOfMessage == 0)
 				{
 					std::cout << "Zerowa wielkosc wiadomosci?" << std::endl;
-					//exit(2);
 				}
 				if(bytesReceived>=sizeOfMessage)
 				{
-					std::cout << "Pobrano wystarczajaca ilosc danych" << std::endl;
+					std::cout << "Pobrano wystarczajaca ilosc danych "<<  bytesReceived << " rozmiar wiadomosci " << sizeOfMessage << std::endl;
 					foundEnd = true;
 				}
 			}
@@ -474,21 +469,6 @@ void Server::writeJSON(int connection, string& json, int HTTPcode) {
 	return;
 }
 
-/*std::vector<std::string>& Server::split(const std::string &s, char delim, std::vector<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
-}
-
-
-std::vector<std::string> Server::split(const std::string &s, char delim) {
-    std::vector<std::string> elems;
-    split(s, delim, elems);
-    return elems;
-} */
 
 void Server::tokenize(const std::string& str, std::vector<std::string>& tokens,
               const std::string& delimiters = " ", bool trimEmpty = false)
@@ -522,6 +502,4 @@ void Server::tokenize(const std::string& str, std::vector<std::string>& tokens,
    }
 }
 
-bool Server::checkIfBracketsPaired(std::string temp){
-	
-}
+
