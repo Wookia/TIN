@@ -51,11 +51,10 @@ class Server {
 		SynchronizedQueue<Packet>* queueInto;
 
 	public:
-		Server();
 		Server(SynchronizedQueue<Packet>* queueToModule2);
+		
 		void closeServer();
 		void startThreads();
-		void joinThreads();
 		void* managerThreadFunction(void* argument); 
 		void* childThreadFunction(int connection);
 		void communicationCenter(int connection);

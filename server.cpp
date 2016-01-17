@@ -26,6 +26,8 @@ void Server::closeServer()
 	}
 	
 	cout << "Server out" << endl;
+	
+	return;
 }
 
 Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
@@ -84,7 +86,7 @@ void Server::startThreads() {
 			//przy ctrl+c nie ma zrobic exita, tylko grzecznie sobie wyjsc i potem dac po sobie posprzatac close
 			//oczywiscie nie ma mowy, zeby ten while(1) byl w konstruktorze
 			
-			if(errno == EINTR) {
+			if (errno == EINTR) {
 				cout << "Manager out" << endl;
 				return;
 			}
@@ -125,36 +127,32 @@ void Server::startThreads() {
 	}
 }
 
-/*
-void Server::joinThreads() {
-	for(int i=0; sizeof(pthread_t)*i<sizeof(childThread); i++) {
-		pthread_join(childThread[i], NULL);
-	}
-}
-*/
-
 void* Server::childThreadFunction(int connection) {
-	cout << "Thread No: " << pthread_self() << endl;
+	cout << "ChildThread No: " << pthread_self() << endl;
 
 	communicationCenter(connection);
 	close(connection);
 
-	cout << "Closed Thread No: " << pthread_self() << endl;
+	cout << "Closed ChildThread No: " << pthread_self() << endl;
 	return NULL;
 }
 
 //converting JSON to appropiate object
 void Server::parsingJSONToDocument(Document& document, string dataReceived)throw(string) {
 	//reading JSON part from HTTP message from Client
+	
 	string readJSON;
-    cout<<"start"<<endl;
+    cout << "start" << endl;
+	
 	//skipping through HTTP Header to JSON Object
+	
 	int i = 0;
 	for ( ; dataReceived[i]!='{'; i++) ;
 	for ( ; dataReceived[i]!='\0'; i++) {
 		readJSON += dataReceived[i];
 	}
-    cout<<"end"<<endl;
+	
+    cout << "end" << endl;
 
 	if (document.Parse(readJSON.c_str()).HasParseError()) {
 		throw(string("PARSING ERROR"));
@@ -165,11 +163,14 @@ void Server::parsingJSONToDocument(Document& document, string dataReceived)throw
 }
 
 void Server::parsingAddressesJSONToTask(Document& document, Task& task)throw(string) {
-    if(!document.IsObject())
+    if (!document.IsObject()) {
         throw(string("BAD REQUEST"));
+    }
 
-    if(!document["addresses"].IsArray())
+    if (!document["addresses"].IsArray()) {
         throw(string("BAD REQUEST"));
+    }
+    
     Value& addresses = document["addresses"];
 
     task.initTask(addresses.Size());
@@ -177,8 +178,9 @@ void Server::parsingAddressesJSONToTask(Document& document, Task& task)throw(str
     cout << "parsingJSON, Task nr: " << task.taskNumber << endl;
 
     for (SizeType i = 0; i < addresses.Size(); i++) {
-        if(!addresses[i]["address"].IsString())
+        if (!addresses[i]["address"].IsString()) {
             throw(string("BAD REQUEST"));
+        }
         task.ip[i] = addresses[i]["address"].GetString();
     }
 
@@ -187,17 +189,21 @@ void Server::parsingAddressesJSONToTask(Document& document, Task& task)throw(str
 
 void Server::parsingTasksJSONToParsedData(Document& document, list<long long int>& tasksList)throw(string){
 	//parsing second JSON
-    if(!document.IsObject())
+    if (!document.IsObject()) {
         throw(string("BAD REQUEST"));
-    if(!document["tasks"].IsArray())
+    }
+    if (!document["tasks"].IsArray()) {
         throw(string("BAD REQUEST"));
+    }
     Value& tasks = document["tasks"];
 
     for (SizeType i = 0; i < tasks.Size(); i++) {
-        if(!tasks[i].HasMember("task"))
+        if (!tasks[i].HasMember("task")) {
             throw(string("BAD REQUEST"));
-        if(!tasks[i]["task"].IsInt64())
+        }
+        if (!tasks[i]["task"].IsInt64()) {
             throw(string("BAD REQUEST"));
+        }
         tasksList.push_back((long long int) tasks[i]["task"].GetInt64());
     }
 	return;
@@ -209,11 +215,11 @@ void Server::communicationCenter(int connection) {
 	string dataReceived=reading(connection);
     string json;
 	int HTTPcode;
-    try
-    {
+	
+    try {
         if (dataReceived[0] == 'P') { // POST
             Document document;
-                cout<<"parsuje"<<endl;
+            cout << "parsuje" << endl;
             parsingJSONToDocument(document, dataReceived);
 
             if (document.HasMember("addresses")) {
@@ -224,10 +230,11 @@ void Server::communicationCenter(int connection) {
 
                 for (int i=0; i<task.size; i++) {
                     cout << "ip[" << i << "]: " <<task.ip[i] << endl;
+                    
 										Packet packet;
 										packet.ip_address =task.ip[i];
 										packet.identifier = task.taskNumber;
-                                        if(i+1==task.size)
+                                        if (i+1 == task.size)
                                             packet.isLast = true;
                                         else
                                             packet.isLast = false;
@@ -240,22 +247,30 @@ void Server::communicationCenter(int connection) {
             }
             else if (document.HasMember("tasks")) {
                 list<long long int> tasksList;
-                cout<<"parsujetoTask"<<endl;
+                
+                cout << "parsujetoTask" << endl;
+                
                 parsingTasksJSONToParsedData(document, tasksList);
                 list<Result> results;
-                cout<<"tworze resulty"<<endl;
-                while(!tasksList.empty())
-                {
-                    cout<<tasksList.front()<<endl;
+                
+                cout << "tworze resulty" << endl;
+                
+                while (!tasksList.empty()) {
+                    cout << tasksList.front() << endl;
+                    
                     results.push_back(dataReciver.getData(tasksList.front()));
                     tasksList.pop_front();
                 }
-                cout<<"creatuje"<<endl;
+                
+                cout << "creatuje" << endl;
+                
                 json = createResponseToTasksJSON(results, HTTPcode);
-                cout<<"wysylam"<<endl;
+                
+                cout << "wysylam" << endl;
                 
                 writeJSON(connection, json, HTTPcode);
-                cout<<"wyslalem"<<endl;
+                
+                cout << "wyslalem" << endl;
             }
         }
         else if (dataReceived[0] == 'G') { // GET
@@ -265,8 +280,7 @@ void Server::communicationCenter(int connection) {
             writing(connection);
         }
     }
-    catch(string e)
-    {
+    catch (string e) {
         json = "";
         writeJSON(connection, json, 400);
     }
@@ -280,7 +294,9 @@ string Server::reading(int connection) {
 		perror("reading");
 		exit(1);
 	}
+	
 	cout << dataReceived << endl;
+	
 	string data = dataReceived;
 	return data;
 }
@@ -319,13 +335,11 @@ string Server::createResponseToTasksJSON(list<Result>& results, int& HTTPcode) {
 
 	string json;
 
-
 	if (results.empty()) {
 		HTTPcode = 404;
 		json = "";
 	}
-    else if (results.size() == 1 && results.front().taskNr == -1)
-    {
+    else if (results.size() == 1 && results.front().taskNr == -1) {
         HTTPcode = 404;
 		json = "";
     }
@@ -377,7 +391,6 @@ string Server::createResponseToTasksJSON(list<Result>& results, int& HTTPcode) {
 void Server::writeJSON(int connection, string& json, int HTTPcode) {
 	if(HTTPcode == 404) {
 		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Not Found\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
-			
 	}
 	else if(HTTPcode == 503) {
 		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Service Unavailable\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
@@ -385,14 +398,16 @@ void Server::writeJSON(int connection, string& json, int HTTPcode) {
     else if(HTTPcode == 400) {
         dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Bad Request\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
     }
-	else {
+	else if(HTTPcode == 200) {
 		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " OK\r\nServer: TIN/1.0\r\nContent-Lenght: "<<to_string(json.size())<<"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"<<json;
 	}
+	
     string dataToSend = dataSent.str();
 	if (send(connection, dataToSend.c_str(), dataSent.tellp(), 0) == -1) {
 		perror("sendJSON");
 		exit(1);
 	}
     dataSent.str("");
+    
 	return;
 }
