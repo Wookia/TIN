@@ -25,7 +25,7 @@
 #include "module3.h"
 #include "Packet.h"
 
-#define TABLE_SIZE 1000
+#define TABLE_SIZE 5
 
 using namespace std;
 using namespace rapidjson;

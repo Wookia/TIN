@@ -13,14 +13,10 @@ void* childThreadFunctionDel(void* pack) {
 void Server::closeServer()
 {
 	close(socketServer);
-	//free the allocated memory
-	//kill all the child threads
-	for (int i=0; i<processCount; i++) {
-		if (pthread_kill(childThread[i], 0) == 0) {
-			pthread_cancel(childThread[i]);
-		}
-	}
 	
+	//we don't kill the leftover HTTP handling threads explicitly - they'll close upon returning from the int main() function
+	
+	//manager checking for easy bug tracing
 	if (pthread_kill(managerThread, 0) == 0) {
 		pthread_cancel(managerThread);
 	}
@@ -76,54 +72,55 @@ void Server::startThreads() {
 
 	int i = 0;
 	int j = 0;
+	//the processCount variable is basically a tool for easy bug tracing - it represents the total number of working threads
+	//processing HTTP requests
 	processCount = 0;
+	int iteration = 0;
 	while (1) {
 		sockaddrClient = sizeof(client);
 		connection = accept(socketServer, (struct sockaddr*) &client, &sockaddrClient);
 		if (connection == -1) {
 			perror("accept");
-			
-			//przy ctrl+c nie ma zrobic exita, tylko grzecznie sobie wyjsc i potem dac po sobie posprzatac close
-			//oczywiscie nie ma mowy, zeby ten while(1) byl w konstruktorze
-			
 			if (errno == EINTR) {
 				cout << "Manager out" << endl;
 				return;
 			}
 			exit(1);
 		}
-		if (processCount>0) {
-			for (j=0; j<processCount; j++) {
-				if (pthread_kill(childThread[j], 0) == 0) {
-					pthread_join(childThread[j], NULL);
-					
-					struct package pack;
-					pack.delegate = reinterpret_cast<void*>(this);
-					pack.connection = connection;
-					pthread_create(&childThread[j], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
-					goto end;
-				}
-			}
-		}
-		if (processCount == TABLE_SIZE) {
+		if (processCount == TABLE_SIZE){
 			string json = "";
 			int HTTPcode = 503;
 			writeJSON(connection, json, HTTPcode);
 			continue;
 		}
-		
-		struct package pack;
-		pack.delegate = reinterpret_cast<void*>(this);
-		pack.connection = connection;
-		pthread_create(&childThread[i], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
-		processCount++;
-		
+		if(iteration == 0){
+			struct package pack;
+			pack.delegate = reinterpret_cast<void*>(this);
+			pack.connection = connection;
+			pthread_create(&childThread[i], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
+			processCount++;
+			goto end;
+		}
+		else for (j=0; j<TABLE_SIZE; j++) {
+			printf("\nBIERZEMY NOWE\n");
+			if (pthread_kill(childThread[j], 0) != 0) {
+				pthread_join(childThread[j], NULL);
+					
+				struct package pack;
+				pack.delegate = reinterpret_cast<void*>(this);
+				pack.connection = connection;
+				pthread_create(&childThread[j], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
+				processCount++;
+				goto end;
+			}
+		}
+		end: ;
 		i++;
 		if (i == TABLE_SIZE) {
+			printf("\nCZYSCIMY!\n");
 			i=0;
+			iteration = 1;
 		}
-		
-		end: ;
 	}
 }
 
@@ -134,6 +131,7 @@ void* Server::childThreadFunction(int connection) {
 	close(connection);
 
 	cout << "Closed ChildThread No: " << pthread_self() << endl;
+	processCount--;
 	return NULL;
 }
 
