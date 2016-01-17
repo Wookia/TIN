@@ -1,5 +1,10 @@
 #include "server.h"
 
+void* managerThreadFunctionDel(void* delegate)
+{
+	return reinterpret_cast<Server*>(delegate)->managerThreadFunction(NULL);
+}
+
 void* childThreadFunctionDel(void* pack) {
 	struct package packa = *((struct package*) pack);
 	return reinterpret_cast<Server*>(packa.delegate)->childThreadFunction(packa.connection);
@@ -10,10 +15,21 @@ void Server::closeServer()
 	close(socketServer);
 	//free the allocated memory
 	//kill all the child threads
+	for (int i=0; i<processCount; i++) {
+		if (pthread_kill(childThread[i], 0) == 0) {
+			pthread_cancel(childThread[i]);
+		}
+	}
+	
+	if (pthread_kill(managerThread, 0) == 0) {
+		pthread_cancel(managerThread);
+	}
+	
+	cout << "Server out" << endl;
 }
 
 Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
-	queueInto= queueToModule2;
+	queueInto = queueToModule2;
 	socketServer = socket(AF_INET, SOCK_STREAM, 0);
 	if (socketServer == -1) {
 		perror("socket");
@@ -42,12 +58,23 @@ Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
 		perror("listen");
 		exit(1);
 	}
+	
+	pthread_create(&managerThread, NULL, &managerThreadFunctionDel, reinterpret_cast<void*>(this));
+}
 
+void* Server::managerThreadFunction(void* argument)
+{
+	startThreads();
+	return NULL;
+}
+
+void Server::startThreads() {
 	int connection;
-	pthread_t* childThread;
 	socklen_t sockaddrClient;
 
-	int i = 1;
+	int i = 0;
+	int j = 0;
+	processCount = 0;
 	while (1) {
 		sockaddrClient = sizeof(client);
 		connection = accept(socketServer, (struct sockaddr*) &client, &sockaddrClient);
@@ -57,29 +84,54 @@ Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
 			//przy ctrl+c nie ma zrobic exita, tylko grzecznie sobie wyjsc i potem dac po sobie posprzatac close
 			//oczywiscie nie ma mowy, zeby ten while(1) byl w konstruktorze
 			
-			if(errno == EINTR)
+			if(errno == EINTR) {
+				cout << "Manager out" << endl;
 				return;
+			}
 			exit(1);
 		}
-		if (i == 1) {
-			childThread = (pthread_t*)malloc(sizeof(pthread_t));
+		if (processCount>0) {
+			for (j=0; j<processCount; j++) {
+				if (pthread_kill(childThread[j], 0) == 0) {
+					pthread_join(childThread[j], NULL);
+					
+					struct package pack;
+					pack.delegate = reinterpret_cast<void*>(this);
+					pack.connection = connection;
+					pthread_create(&childThread[j], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
+					goto end;
+				}
+			}
 		}
-		else {
-			childThread = (pthread_t*)realloc(childThread,i*sizeof(pthread_t));
+		if (processCount == TABLE_SIZE) {
+			string json = "";
+			int HTTPcode = 503;
+			writeJSON(connection, json, HTTPcode);
+			continue;
 		}
+		
 		struct package pack;
 		pack.delegate = reinterpret_cast<void*>(this);
 		pack.connection = connection;
-		pthread_create(&childThread[i-1], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
+		pthread_create(&childThread[i], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
+		processCount++;
+		
 		i++;
+		if (i == TABLE_SIZE) {
+			i=0;
+		}
+		
+		end: ;
 	}
+}
 
-	
+/*
+void Server::joinThreads() {
 	for(int i=0; sizeof(pthread_t)*i<sizeof(childThread); i++) {
 		pthread_join(childThread[i], NULL);
 	}
-	
 }
+*/
 
 void* Server::childThreadFunction(int connection) {
 	cout << "Thread No: " << pthread_self() << endl;
@@ -87,6 +139,7 @@ void* Server::childThreadFunction(int connection) {
 	communicationCenter(connection);
 	close(connection);
 
+	cout << "Closed Thread No: " << pthread_self() << endl;
 	return NULL;
 }
 
@@ -239,6 +292,7 @@ void Server::writing(int connection) {
 		perror("writing");
 		exit(1);
 	}
+	dataSent.str("");
 
 	return;
 }
@@ -265,7 +319,6 @@ string Server::createResponseToTasksJSON(list<Result>& results, int& HTTPcode) {
 
 	string json;
 
-	///TODO: ResponseToTasksJSON
 
 	if (results.empty()) {
 		HTTPcode = 404;
@@ -326,11 +379,14 @@ void Server::writeJSON(int connection, string& json, int HTTPcode) {
 		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Not Found\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
 			
 	}
+	else if(HTTPcode == 503) {
+		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Service Unavailable\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
+	}
     else if(HTTPcode == 400) {
         dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Bad Request\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
     }
 	else {
-		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Ok\r\nServer: TIN/1.0\r\nContent-Lenght: "<<to_string(json.size())<<"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"<<json;
+		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " OK\r\nServer: TIN/1.0\r\nContent-Lenght: "<<to_string(json.size())<<"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"<<json;
 	}
     string dataToSend = dataSent.str();
 	if (send(connection, dataToSend.c_str(), dataSent.tellp(), 0) == -1) {
@@ -338,10 +394,5 @@ void Server::writeJSON(int connection, string& json, int HTTPcode) {
 		exit(1);
 	}
     dataSent.str("");
-	return;
-}
-
-void Server::doTraceroute() {
-
 	return;
 }

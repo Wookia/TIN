@@ -24,6 +24,9 @@
 #include "SynchronizedQueue.h"
 #include "module3.h"
 #include "Packet.h"
+
+#define TABLE_SIZE 1000
+
 using namespace std;
 using namespace rapidjson;
 
@@ -41,6 +44,9 @@ class Server {
 		stringstream dataSent;
 		struct sockaddr_in server;
 		struct sockaddr_in client;
+		pthread_t managerThread;
+		pthread_t childThread[TABLE_SIZE];
+		int processCount;
 		Module3 dataReciver;
 		SynchronizedQueue<Packet>* queueInto;
 
@@ -48,11 +54,13 @@ class Server {
 		Server();
 		Server(SynchronizedQueue<Packet>* queueToModule2);
 		void closeServer();
+		void startThreads();
+		void joinThreads();
+		void* managerThreadFunction(void* argument); 
 		void* childThreadFunction(int connection);
 		void communicationCenter(int connection);
 		string reading(int connection);
 		void writing(int connection);
-		void doTraceroute();
 		string createResponseToAddressesJSON(long long int taskNr, int& HTTPcode);
 		string createResponseToTasksJSON(list<Result>& results, int& HTTPcode);
 		void writeJSON(int connection, string& json, int HTTPcode);
