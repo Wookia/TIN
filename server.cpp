@@ -26,16 +26,18 @@ void Server::closeServer()
 	return;
 }
 
-Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
+Server::Server(SynchronizedQueue<Packet>* queueToModule2, Params* params, Module3* module3) {
 	queueInto = queueToModule2;
+    dataReciver = module3;
+    portNumber = params->port_number;
+	IPAddress = params->ip_address;
+    
 	socketServer = socket(AF_INET, SOCK_STREAM, 0);
 	if (socketServer == -1) {
 		perror("socket");
 		exit(1);
 	}
 
-	portNumber = 8080;
-	IPAddress = "127.0.0.1";
 
     int yes = 1;
 	if (setsockopt(socketServer, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
@@ -44,7 +46,7 @@ Server::Server(SynchronizedQueue<Packet>* queueToModule2) {
 	}
 
 	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = inet_addr(IPAddress);
+	server.sin_addr.s_addr = inet_addr(IPAddress.c_str());
 	server.sin_port = htons(portNumber);
 
 	if (bind(socketServer, (struct sockaddr*) &server, sizeof(server)) == -1) {
@@ -257,7 +259,7 @@ void Server::communicationCenter(int connection) {
                 while (!tasksList.empty()) {
                     cout << tasksList.front() << endl;
                     
-                    results.push_back(dataReciver.getData(tasksList.front()));
+                    results.push_back(dataReciver->getData(tasksList.front()));
                     tasksList.pop_front();
                 }
                 

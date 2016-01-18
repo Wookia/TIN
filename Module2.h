@@ -25,6 +25,7 @@
 #include <string>
 #include <list>
 #include <fstream>
+#include "Params.h"
 
 extern "C" void* senderThreadWorkerDel(void*);
 extern "C" void* receiverThreadWorkerDel(void*);
@@ -33,7 +34,7 @@ class Module2
 	public:
 		Module2();
 		void closeModule();
-		Module2 (SynchronizedQueue<Packet>* queueIntoM2);
+		Module2 (SynchronizedQueue<Packet>* queueIntoM2, Params* params, Module3* module3);
 		//ZMIENIC Z PACKET NA COS CO BEDZIE REPREZENTOWAC ZADANIE
 		int init(std::string& address, long long int taskNr, int newRetries);
 		int startThreads();
@@ -47,7 +48,7 @@ class Module2
 	private:
 		SynchronizedQueue<Packet>* queueIntoModule;
 		Result result;
-		Module3 module3;
+		Module3* module3;
 		pthread_t senderThread, receiverThread, managerThread;
 		sem_t senderSem, receiverSem;
 		std::string tracedAddress;
@@ -55,6 +56,10 @@ class Module2
 		int nasz_socket, rc;
 		int retries;
 		std::ofstream module2Output;
+        int max_ttl;
+        int max_packets_per_ttl;
+        int timeout;
+        int freq;
 };
 
 #endif

@@ -8,9 +8,14 @@ void* managerThreadWorkerDel(void* delegate)
 	return reinterpret_cast<Module2*>(delegate)->managerThreadWorker(NULL);
 }
 
-Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2)
+Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2, Params* params, Module3* module3Pointer)
 {
-	sem_init(&senderSem, 0, 0);
+    max_ttl = params->max_ttl;
+    max_packets_per_ttl = params->max_packets_per_ttl;
+    timeout = params->timeout;
+    freq = params->freq;
+    module3 = module3Pointer;
+    sem_init(&senderSem, 0, 0);
 	sem_init(&receiverSem, 0, 0);
 	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 	queueIntoModule = queueIntoM2;
@@ -86,11 +91,11 @@ void* Module2::senderThreadWorker(void* argument)
 	FD_SET(0, &set);
 
 	struct timespec timerSet;
-	timerSet.tv_sec = 3;
+	timerSet.tv_sec = freq;
 	timerSet.tv_nsec = 0;
 
 	struct timespec timerSet2;
-	timerSet2.tv_sec = 20;
+	timerSet2.tv_sec = timeout;
 	timerSet2.tv_nsec = 0;
 
 	PacketGenerator packetgen;
@@ -106,7 +111,7 @@ void* Module2::senderThreadWorker(void* argument)
 	inet_aton(tracedAddress.c_str(), &addr.sin_addr);
 
 	int loopRetries = retries;
-	for(ttl = 1; ttl <= 20; ttl++)
+	for(ttl = 1; ttl <= max_ttl; ttl++)
 	{
 		setsockopt(nasz_socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
 		packetgen.generatePacket(header, data, 1, ttl);
@@ -166,7 +171,7 @@ void* Module2::receiverThreadWorker(void* argument)
 	module2Output << "ID SOCKETU: " << nasz_socket << endl;
 
 	struct timespec timerSet;
-	timerSet.tv_sec = 20;
+	timerSet.tv_sec = timeout;
 	timerSet.tv_nsec = 0;
 
 	int rc;
@@ -274,12 +279,12 @@ void* Module2::managerThreadWorker(void* argument)
 	{
 		Packet test = queueIntoModule->pop();
 		//do the traceroute
-		init(test.ip_address, test.identifier, 4);
+		init(test.ip_address, test.identifier, max_packets_per_ttl);
 		startThreads();
 		joinThreads();
 		//get the results back
         result.isLast = test.isLast;
-		module3.saveData(result);
+		module3->saveData(result);
 		//back to 1
 	}
 	return NULL;

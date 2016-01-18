@@ -19,12 +19,15 @@
 #include <list>
 #include "server.h"
 #include "SynchronizedQueue.h"
+#include "Params.h"
 
 using namespace std;
 
 SynchronizedQueue<Packet>* queuePointer;
+Module3* module3Pointer;
 Module2* module2Pointer;
 Server* serverPointer;
+Params* paramsPointer;
 
 void firstHandler(int signo)
 {
@@ -77,18 +80,35 @@ void init_signal_handling()
     //sigprocmask(SIG_UNBLOCK, &unblockedSignalsSet, NULL);
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    std::string configName;
+    if(argc>=2)
+    {
+        configName = std::string(argv[1]);
+        std::cout<<"Plik konfiguracyjny: "<<configName<<std::endl;
+    }
+    else
+    {
+        std::cout<<"Domyslny plik konfiguracyjny"<<std::endl;
+    }
     init_signal_handling();
+    Params params;
+    paramsPointer = &params;
     SynchronizedQueue<Packet> queueToModule2;
+    Module3* module3;
+    if (params.repo_path == "")
+        module3 = new Module3();
+    else
+        module3 = new Module3(params.repo_path);
     queuePointer = &queueToModule2;
-	Module2 module2(&queueToModule2);
+	Module2 module2(&queueToModule2, paramsPointer, module3);
 	module2Pointer = &module2;
-	Server server(&queueToModule2);
+	Server server(&queueToModule2, paramsPointer, module3);
 	serverPointer = &server;
 	
 	module2.join();
 	printf("Wszystko zamknelo sie poprawnie!\n");
-	
+	delete(module3);
 	return 0;
 }

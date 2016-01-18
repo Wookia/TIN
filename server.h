@@ -26,6 +26,7 @@
 #include "SynchronizedQueue.h"
 #include "module3.h"
 #include "Packet.h"
+#include "Params.h"
 
 #define TABLE_SIZE 5
 
@@ -42,14 +43,14 @@ class Server {
 	private:
 		int socketServer;
 		int portNumber;
-		const char* IPAddress;
+		string IPAddress;
 		stringstream dataSent;
 		struct sockaddr_in server;
 		struct sockaddr_in client;
 		pthread_t managerThread;
 		pthread_t childThread[TABLE_SIZE];
 		int processCount;
-		Module3 dataReciver;
+		Module3* dataReciver;
 		SynchronizedQueue<Packet>* queueInto;
 		std::vector<std::string> splitData;
 		
@@ -58,7 +59,7 @@ class Server {
 		
 
 	public:
-		Server(SynchronizedQueue<Packet>* queueToModule2);
+		Server(SynchronizedQueue<Packet>* queueToModule2, Params* params, Module3* module3);
 		
 		void closeServer();
 		void startThreads();
