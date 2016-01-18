@@ -307,6 +307,10 @@ string Server::reading(int connection) {
 			perror("reading");
 			exit(1);
 		}
+		if(bytesReceived == 0) {
+			std::cout << "Zerwane polaczenie" << endl;
+			break;
+		}
 		totalReceived += bytesReceived;
 		temp.append(dataReceived,bytesReceived);
 		std::cout << "temp po append " << temp << endl; 

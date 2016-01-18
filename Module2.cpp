@@ -1,5 +1,12 @@
 #include "Module2.h"
 
+#ifndef ICMP_FILTER
+#define ICMP_FILTER	1
+struct icmp_filter {
+	__u32	data;
+};
+#endif
+//gotohell
 
 using namespace std;
 
@@ -18,6 +25,7 @@ Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2, Params* params, Module
     sem_init(&senderSem, 0, 0);
 	sem_init(&receiverSem, 0, 0);
 	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+	
 	queueIntoModule = queueIntoM2;
 	if (nasz_socket == -1)
 	{
@@ -109,6 +117,17 @@ void* Module2::senderThreadWorker(void* argument)
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	inet_aton(tracedAddress.c_str(), &addr.sin_addr);
+	icmp_filter filter;
+    filter.data = ~((1<<ICMP_SOURCE_QUENCH) |
+                            (1<<ICMP_DEST_UNREACH) |
+                            (1<<ICMP_TIME_EXCEEDED) |
+                            (1<<ICMP_REDIRECT) |
+                            (1<<ICMP_ECHOREPLY));
+	if(setsockopt(nasz_socket, SOL_RAW, ICMP_FILTER, (char *)&filter, sizeof(filter)) < 0)
+            {
+                perror("setsockopt(ICMP_FILTER)");
+                exit(3);
+            }
 
 	int loopRetries = retries;
 	for(ttl = 1; ttl <= max_ttl; ttl++)
@@ -223,7 +242,8 @@ void* Module2::receiverThreadWorker(void* argument)
 		{
 			fprintf(stderr, "Expected ICMP packet, got %u\n", iphdr->protocol);
 			module2Output << "Expected ICMP packet, got " << iphdr->protocol << endl;
-			exit(1);
+			//exit(1);			//nie exit
+			continue;
 		}
 		icmphdr = (struct icmphdr*)(rbuf + (iphdr->ihl * 4));
 		module2Output << "Dlugosc headera ip "<< iphdr->ihl << endl;
@@ -232,7 +252,8 @@ void* Module2::receiverThreadWorker(void* argument)
 		{
 			fprintf(stderr, "Expected ICMP echo-reply, got %u\n", icmphdr->type);
 			module2Output << "Expected ICMP echo-reply, got " << icmphdr->type << endl;
-			exit(1);
+			//exit(1);	//nie exit, ale trzeba cos zrobic :/ jezeli bedzie przychodzic w kolko icmp 8 jak w przypadku ktoregos zadania to nigdy nie skonczy w tej chwili
+			continue; //przy zalozonym filtrze nigdy nie powinno dojsc do tego miejsca, jezeli tak to aplikacja sie wysypie w koncu na 99%
 		}
 		if(icmphdr->type == ICMP_TIME_EXCEEDED)
 		{

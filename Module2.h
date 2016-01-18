@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <linux/types.h>
 #include <netinet/ip_icmp.h>
 #include <sys/stat.h>
 #include "errno.h"
@@ -26,6 +27,8 @@
 #include <list>
 #include <fstream>
 #include "Params.h"
+#include <fcntl.h>
+
 
 extern "C" void* senderThreadWorkerDel(void*);
 extern "C" void* receiverThreadWorkerDel(void*);
