@@ -292,19 +292,24 @@ void Server::communicationCenter(int connection) {
 string Server::reading(int connection) {
 	char dataReceived[10000];
 	int bytesReceived;
+	int totalReceived = 0;
 	int contentLength = 0;
 	int sizeOfMessage = 0;
 	bool foundEnd = false;
 	bool foundContentLength = false;
 	string temp,temp2;
 	std::size_t found;
+	
 	do
 	{
+		std::cout << "temp na poczatku petli" << temp << endl;
 		if ((bytesReceived = recv(connection, dataReceived, sizeof(dataReceived), 0)) == -1) {
 			perror("reading");
 			exit(1);
 		}
+		totalReceived += bytesReceived;
 		temp.append(dataReceived,bytesReceived);
+		std::cout << "temp po append " << temp << endl; 
 		found = temp.find("\r\n\r\n",0,4);
 		if (found!=std::string::npos) {
 			std::cout << "Znaleziono koniec naglowka http " << found << endl;
@@ -321,6 +326,7 @@ string Server::reading(int connection) {
 						std::size_t tempfound = (*it).find(":");
 						std::string contentLengthString = (*it).substr(tempfound+1);
 						contentLength = std::stoi( contentLengthString );
+						std::cout << "Content Length " << contentLength << " found " << found << endl;
 						sizeOfMessage = contentLength + found + 4;
 						foundContentLength = true;
 						break;
@@ -337,11 +343,12 @@ string Server::reading(int connection) {
 				{
 					std::cout << "Zerowa wielkosc wiadomosci?" << std::endl;
 				}
-				if(bytesReceived>=sizeOfMessage)
+				if((totalReceived>=sizeOfMessage) && (sizeOfMessage != 0))
 				{
-					std::cout << "Pobrano wystarczajaca ilosc danych "<<  bytesReceived << " rozmiar wiadomosci " << sizeOfMessage << std::endl;
+					std::cout << "Pobrano wystarczajaca ilosc danych "<<  totalReceived << " rozmiar wiadomosci " << sizeOfMessage << std::endl;
 					foundEnd = true;
 				}
+				std::cout << "POBRANO DANYCH "<<  totalReceived << " rozmiar wiadomosci " << sizeOfMessage << std::endl;
 			}
 	
 		}
@@ -355,8 +362,10 @@ string Server::reading(int connection) {
 		//cout << dataReceived << endl;
 	
 	} while(foundEnd==false);
+	splitData.clear();
 	
 	string data = temp;
+	temp.clear();
 	return data;
 }
 
