@@ -31,6 +31,7 @@ Server::Server(SynchronizedQueue<Packet>* queueToModule2, Params* params, Module
     dataReciver = module3;
     portNumber = params->port_number;
 	IPAddress = params->ip_address;
+	sizeLimit = params->size_limit;
     
 	socketServer = socket(AF_INET, SOCK_STREAM, 0);
 	if (socketServer == -1) {
@@ -213,11 +214,10 @@ void Server::parsingTasksJSONToParsedData(Document& document, list<long long int
 // CommunicationCenter reads HTTP message and writes the HTTP answer to client
 void Server::communicationCenter(int connection) {
 	//first read, then respond appriopiately
+	try {
 	string dataReceived=reading(connection);
-    string json;
+    	string json;
 	int HTTPcode;
-	
-    try {
         if (dataReceived[0] == 'P') { // POST
             Document document;
             cout << "parsuje" << endl;
@@ -282,14 +282,20 @@ void Server::communicationCenter(int connection) {
         }
     }
     catch (string e) {
-        json = "";
-        writeJSON(connection, json, 400);
+	if(e.c_str()=="MESSAGE TOO LARGE") {
+		json = "{\"error\":\"MESSAGE TOO LARGE\"}";
+		writeJSON(connection,json,400);
+	}
+	else {
+        	json = "{\"error\":\"WRONG JSON STRUCTURE\"}";
+        	writeJSON(connection, json, 400);
+	}
     }
 
 	return;
 }
 
-string Server::reading(int connection) {
+string Server::reading(int connection) throw(string) {
 	char dataReceived[10000];
 	int bytesReceived;
 	int totalReceived = 0;
@@ -330,6 +336,9 @@ string Server::reading(int connection) {
 						std::size_t tempfound = (*it).find(":");
 						std::string contentLengthString = (*it).substr(tempfound+1);
 						contentLength = std::stoi( contentLengthString );
+							if(contentLength>sizeLimit) {
+								throw string("MESSAGE TOO LARGE");
+							}
 						std::cout << "Content Length " << contentLength << " found " << found << endl;
 						sizeOfMessage = contentLength + found + 4;
 						foundContentLength = true;
@@ -346,6 +355,9 @@ string Server::reading(int connection) {
 				if(sizeOfMessage == 0)
 				{
 					std::cout << "Zerowa wielkosc wiadomosci?" << std::endl;
+				}
+				if(totalReceived>sizeLimit) {
+					throw string("MESSAGE TOO LARGE");
 				}
 				if((totalReceived>=sizeOfMessage) && (sizeOfMessage != 0))
 				{

@@ -43,6 +43,7 @@ class Server {
 	private:
 		int socketServer;
 		int portNumber;
+		int sizeLimit;
 		string IPAddress;
 		stringstream dataSent;
 		struct sockaddr_in server;
