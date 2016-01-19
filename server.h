@@ -67,7 +67,7 @@ class Server {
 		void* managerThreadFunction(void* argument); 
 		void* childThreadFunction(int connection);
 		void communicationCenter(int connection);
-		string reading(int connection);
+		string reading(int connection)throw(string);
 		void writing(int connection);
 		string createResponseToAddressesJSON(long long int taskNr, int& HTTPcode);
 		string createResponseToTasksJSON(list<Result>& results, int& HTTPcode);

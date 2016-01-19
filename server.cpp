@@ -282,12 +282,12 @@ void Server::communicationCenter(int connection) {
         }
     }
     catch (string e) {
-	if(e.c_str()=="MESSAGE TOO LARGE") {
-		json = "{\"error\":\"MESSAGE TOO LARGE\"}";
+	if(e==string("MESSAGE TOO LARGE")) {
+		string json = "{\"error\":\"MESSAGE TOO LARGE\"}";
 		writeJSON(connection,json,400);
 	}
 	else {
-        	json = "{\"error\":\"WRONG JSON STRUCTURE\"}";
+        	string json = "{\"error\":\"WRONG JSON STRUCTURE\"}";
         	writeJSON(connection, json, 400);
 	}
     }
