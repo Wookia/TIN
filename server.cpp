@@ -337,6 +337,8 @@ string Server::reading(int connection) throw(string) {
 						std::string contentLengthString = (*it).substr(tempfound+1);
 						contentLength = std::stoi( contentLengthString );
 							if(contentLength>sizeLimit) {
+								temp.clear();
+								splitData.clear();
 								throw string("MESSAGE TOO LARGE");
 							}
 						std::cout << "Content Length " << contentLength << " found " << found << endl;
@@ -357,6 +359,8 @@ string Server::reading(int connection) throw(string) {
 					std::cout << "Zerowa wielkosc wiadomosci?" << std::endl;
 				}
 				if(totalReceived>sizeLimit) {
+					temp.clear();
+					splitData.clear();
 					throw string("MESSAGE TOO LARGE");
 				}
 				if((totalReceived>=sizeOfMessage) && (sizeOfMessage != 0))

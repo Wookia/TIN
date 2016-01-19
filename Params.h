@@ -7,11 +7,12 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
 class Params
 {
     public:
         int port_number;
-	int size_limit;
+		int size_limit;
         std::string ip_address;
         int max_ttl;
         int max_packets_per_ttl;

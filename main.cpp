@@ -83,9 +83,11 @@ void init_signal_handling()
 int main(int argc, char** argv)
 {
     std::string configName;
+    Params* paramsPointer;
     if(argc>=2)
     {
         configName = std::string(argv[1]);
+		paramsPointer = new Params(configName);
         std::cout<<"Plik konfiguracyjny: "<<configName<<std::endl;
     }
     else
@@ -93,14 +95,12 @@ int main(int argc, char** argv)
         std::cout<<"Domyslny plik konfiguracyjny"<<std::endl;
     }
     init_signal_handling();
-    Params params;
-    paramsPointer = &params;
     SynchronizedQueue<Packet> queueToModule2;
     Module3* module3;
-    if (params.repo_path == "")
+    if (paramsPointer->repo_path == "")
         module3 = new Module3();
     else
-        module3 = new Module3(params.repo_path);
+        module3 = new Module3(paramsPointer->repo_path);
     queuePointer = &queueToModule2;
 	Module2 module2(&queueToModule2, paramsPointer, module3);
 	module2Pointer = &module2;
@@ -110,5 +110,6 @@ int main(int argc, char** argv)
 	module2.join();
 	printf("Wszystko zamknelo sie poprawnie!\n");
 	delete(module3);
+	delete(paramsPointer);
 	return 0;
 }
