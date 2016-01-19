@@ -480,7 +480,7 @@ void Server::writeJSON(int connection, string& json, int HTTPcode) {
 		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Service Unavailable\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
 	}
     else if(HTTPcode == 400) {
-        dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Bad Request\r\nServer: TIN/1.0\r\nContent-Lenght: "<<to_string(json.size())<<"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"<<json;";
+        dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Bad Request\r\nServer: TIN/1.0\r\nContent-Lenght: "<<to_string(json.size())<<"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"<<json;
     }
 	else if(HTTPcode == 200) {
 		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " OK\r\nServer: TIN/1.0\r\nContent-Lenght: "<<to_string(json.size())<<"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"<<json;
