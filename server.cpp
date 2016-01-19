@@ -13,16 +13,16 @@ void* childThreadFunctionDel(void* pack) {
 void Server::closeServer()
 {
 	close(socketServer);
-	
+
 	//we don't kill the leftover HTTP handling threads explicitly - they'll close upon returning from the int main() function
-	
+
 	//manager checking for easy bug tracing
 	if (pthread_kill(managerThread, 0) == 0) {
 		pthread_cancel(managerThread);
 	}
-	
+
 	cout << "Server out" << endl;
-	
+
 	return;
 }
 
@@ -32,7 +32,7 @@ Server::Server(SynchronizedQueue<Packet>* queueToModule2, Params* params, Module
     portNumber = params->port_number;
 	IPAddress = params->ip_address;
 	sizeLimit = params->size_limit;
-    
+
 	socketServer = socket(AF_INET, SOCK_STREAM, 0);
 	if (socketServer == -1) {
 		perror("socket");
@@ -59,7 +59,7 @@ Server::Server(SynchronizedQueue<Packet>* queueToModule2, Params* params, Module
 		perror("listen");
 		exit(1);
 	}
-	
+
 	pthread_create(&managerThread, NULL, &managerThreadFunctionDel, reinterpret_cast<void*>(this));
 }
 
@@ -108,7 +108,7 @@ void Server::startThreads() {
 			printf("\nBIERZEMY NOWE\n");
 			if (pthread_kill(childThread[j], 0) != 0) {
 				pthread_join(childThread[j], NULL);
-					
+
 				struct package pack;
 				pack.delegate = reinterpret_cast<void*>(this);
 				pack.connection = connection;
@@ -142,18 +142,18 @@ void* Server::childThreadFunction(int connection) {
 //converting JSON to appropiate object
 void Server::parsingJSONToDocument(Document& document, string dataReceived)throw(string) {
 	//reading JSON part from HTTP message from Client
-	
+
 	string readJSON;
     cout << "start" << endl;
-	
+
 	//skipping through HTTP Header to JSON Object
-	
+
 	int i = 0;
 	for ( ; dataReceived[i]!='{'; i++) ;
 	for ( ; dataReceived[i]!='\0'; i++) {
 		readJSON += dataReceived[i];
 	}
-	
+
     cout << "end" << endl;
 
 	if (document.Parse(readJSON.c_str()).HasParseError()) {
@@ -172,7 +172,7 @@ void Server::parsingAddressesJSONToTask(Document& document, Task& task)throw(str
     if (!document["addresses"].IsArray()) {
         throw(string("BAD REQUEST"));
     }
-    
+
     Value& addresses = document["addresses"];
 
     task.initTask(addresses.Size());
@@ -231,7 +231,7 @@ void Server::communicationCenter(int connection) {
 
                 for (int i=0; i<task.size; i++) {
                     cout << "ip[" << i << "]: " <<task.ip[i] << endl;
-                    
+
 										Packet packet;
 										packet.ip_address =task.ip[i];
 										packet.identifier = task.taskNumber;
@@ -248,29 +248,29 @@ void Server::communicationCenter(int connection) {
             }
             else if (document.HasMember("tasks")) {
                 list<long long int> tasksList;
-                
+
                 cout << "parsujetoTask" << endl;
-                
+
                 parsingTasksJSONToParsedData(document, tasksList);
                 list<Result> results;
-                
+
                 cout << "tworze resulty" << endl;
-                
+
                 while (!tasksList.empty()) {
                     cout << tasksList.front() << endl;
-                    
+
                     results.push_back(dataReciver->getData(tasksList.front()));
                     tasksList.pop_front();
                 }
-                
+
                 cout << "creatuje" << endl;
-                
+
                 json = createResponseToTasksJSON(results, HTTPcode);
-                
+
                 cout << "wysylam" << endl;
-                
+
                 writeJSON(connection, json, HTTPcode);
-                
+
                 cout << "wyslalem" << endl;
             }
         }
@@ -305,7 +305,7 @@ string Server::reading(int connection) throw(string) {
 	bool foundContentLength = false;
 	string temp,temp2;
 	std::size_t found;
-	
+
 	do
 	{
 		std::cout << "temp na poczatku petli" << temp << endl;
@@ -319,7 +319,7 @@ string Server::reading(int connection) throw(string) {
 		}
 		totalReceived += bytesReceived;
 		temp.append(dataReceived,bytesReceived);
-		std::cout << "temp po append " << temp << endl; 
+		std::cout << "temp po append " << temp << endl;
 		found = temp.find("\r\n\r\n",0,4);
 		if (found!=std::string::npos) {
 			std::cout << "Znaleziono koniec naglowka http " << found << endl;
@@ -327,10 +327,10 @@ string Server::reading(int connection) throw(string) {
 				foundEnd = true;
 				}
 			else
-			{ 
+			{
 				tokenize(temp,splitData,"\r\n",false);
 				std::vector<std::string>::iterator it;
-				
+
 				for(it=splitData.begin() ; it < splitData.end(); it++ ) {
 					if((*it).find("Content-Length") != std::string::npos) {
 						std::size_t tempfound = (*it).find(":");
@@ -366,20 +366,20 @@ string Server::reading(int connection) throw(string) {
 				}
 				std::cout << "POBRANO DANYCH "<<  totalReceived << " rozmiar wiadomosci " << sizeOfMessage << std::endl;
 			}
-	
+
 		}
 		else {
 			std::cout << "Nie Znaleziono konca naglowka http" << std::endl;
 			foundEnd = false;
 		}
-		
 
-	
+
+
 		//cout << dataReceived << endl;
-	
+
 	} while(foundEnd==false);
 	splitData.clear();
-	
+
 	string data = temp;
 	temp.clear();
 	return data;
@@ -480,19 +480,19 @@ void Server::writeJSON(int connection, string& json, int HTTPcode) {
 		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Service Unavailable\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
 	}
     else if(HTTPcode == 400) {
-        dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Bad Request\r\nServer: TIN/1.0\r\nConnection: close\r\n\r\n";
+        dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " Bad Request\r\nServer: TIN/1.0\r\nContent-Lenght: "<<to_string(json.size())<<"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"<<json;";
     }
 	else if(HTTPcode == 200) {
 		dataSent << "HTTP/1.1 " << to_string(HTTPcode) << " OK\r\nServer: TIN/1.0\r\nContent-Lenght: "<<to_string(json.size())<<"\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n"<<json;
 	}
-	
+
     string dataToSend = dataSent.str();
 	if (send(connection, dataToSend.c_str(), dataSent.tellp(), 0) == -1) {
 		perror("sendJSON");
 		exit(1);
 	}
     dataSent.str("");
-    
+
 	return;
 }
 
