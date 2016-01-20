@@ -197,7 +197,7 @@ Wątek wysyłający odbiera sygnał poprzez funkcję pselect() z odpowiednią ma
 
 ####Parametry dotyczące Modułu 2:
 
-Parametry przechowywane są w standardowym tekstowym pliku konfiguracyjnym ConfigFile.conf - jeden parametr odpowiadający jednej linii pliku.
+Parametry przechowywane są w pliku konfiguracyjny programu razem z resztą parametrów dotyczących działania aplikacji.
 
 MAX_TTL - domyślna wartość maksymalnego czasu życia pakietu.
 
