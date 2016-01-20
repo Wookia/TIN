@@ -138,7 +138,7 @@ PORTNUMBER - numer portu, na którym nasłuchuje serwer
 IPADDRESS - adres IP, na którym nasłuchuje serwer
 
 ###Moduł 2
-Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na trzy zasadnicze elementy: generator pakietów (działający w wątku wysyłającym), wątek wysyłający pakiety oraz wątek odbierający pakiety i rozdzielający odebrane dane według odpowiednich pól nagłówka odebranego komunikatu. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
+Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na cztery zasadnicze elementy: wątek zarządcy, generator pakietów (działający w wątku wysyłającym), wątek wysyłający pakiety oraz wątek odbierający pakiety. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
 Moduł wysyła komunikaty ICMP ECHO_REQUEST (znane np. z programu ping) z kolejnymi wartościami pola TTL i oczekuje komunikatów TIME_EXCEEDED (przekroczony TTL) oraz ECHO_REPLY (pakiet dotarł do celu, koniec trasy).
 ####Generator pakietów:
 Ze względu na stosowanie protokołu ICMP zastosowany musi być tzw. "raw socket", czyli gniazda umożliwiające wysyłkę i odbiór pakietów IP bez informacji warstwy transportu. Zastosowanie tego typu gniazd wymagana ręcznego tworzenia pakietów do wysłania, odpowiedzialny za to będzie obiekt klasy Generator pakietów. Tworzy on pakiety IP o zadanym Adresie docelowym oraz TTL (Time-To-Live), w którym zawarty będzie pakiet protokołu ICMP o typie komunikatu ECHO_REQUEST i określonych wartościach pól Sequence i Identifier. Identifier to całkowitoliczbowy identyfikator konkretnej śledzonej trasy, a Sequence to TTL pakietu.
@@ -154,34 +154,49 @@ Nagłówek ICMP oraz dane będą budowane ręcznie w następujący sposób:
 
 Dane: 64 oktety zer.
 
+####Wątek zarządcy
+Wątek zarządcy przyjmuje z kolejki wejściowej zadania do wykonania umieszczone tam przez Moduł 1. Następnie powołuje do życia wątek wysyłający, wątek odbierający i czeka na koniec ich pracy, wywołując następnie metodę zapisu Modułu 3, która zapisze wyznaczoną trasę do pliku.
+
 ####Wątek wysyłający
-Przyjmuje zadania od Modułu 3., generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Zapisuje informacje o wysłanym pakiecie (w tym czas wysłania) do kolejki, z której odbierze tę strukturę wątek odbierający.
+Generuje za pomocą Generatora pakiety do wysłania, tworzy gniazdo i wysyła pakiety. Przy tworzeniu gniazda (korzystać z niego będzie również wątek odbierający) ustawia odpowiedni filtr, który ogranicza odbiór niepożądanych pakietów, np. ECHO_REQUEST.
 
 ####Wątek odbierający
-Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem będzie odbieranie wszystkich pakietów ICMP i ich interpretacja (możemy np. otrzymać pakiet zupełnie niezwiązany z zadaniem).
+Zastosowanie ICMP wraz z "raw socket" wymusza utworzenie jednego wątku odbierającego przez brak rozróżnienia portów. Jego zadaniem jest odbieranie wszystkich pakietów ICMP i ich interpretacja (możemy np. otrzymać pakiet zupełnie niezwiązany z zadaniem lub zdezaktualizowany).
 
-####Komunikacja z Modułem 3.
-Kolejka std::queue zabezpieczona semaforem, przechowująca struktury z adresami do traceroutingu (Moduł 2. <-- Moduł 3.).
-Kolejka std::queue zabezpieczona semaforem, przechowująca wyznaczone trasy (Moduł 2. --> Moduł 3.).
-Sygnał SIGUSR2 nadawany przez Moduł 3., pobudzający do działania wątki Modułu 2.
-Sygnał SIGUSR2 nadawany przez Moduł 2. po wykonaniu zadania traceroutingu, informujący Moduł 3. o danych w kolejce wynikowej.
+####Komunikacja z Modułem 1
+Kolejka std::queue zabezpieczona dodatkowo semaforem, przechowująca struktury z adresami do traceroutingu. Dzięki semaforowi i funkcji sem_wait(), wątek zarządcy zawiesza się na pustej kolejce i pobiera z niej nowy element dopiero, gdy taki zostanie do niej wstawiony.
+
+####Komunikacja z Modułem 3
+Komunikacja z Modułem 3 odbywa się w prosty sposób - wywoływana jest po prostu jego metoda zapisu rezultatu działań do pliku.
 
 ####Synchronizacja pomiędzy wątkami odbierającym i wysyłającym
-Wątki współdzielą kolejkę typu std::queue, zabezpieczoną semaforem, przeznaczoną do dostarczania wiedzy do wątku odbierającego o wysłanych pakietach. Kolejka ta przechowuje struktury zawierające kompletny pakiet oraz wyodrębione najważniejsze informacje na jego temat: wartości pól Identifier, Sequence i czas wysłania.
-Sygnał SIGUSR1 to polecenie "kontynuuj wysyłanie pakietów", wydawane wątkowi wysyłającemu przez wątek odbierający po odebraniu pakietu, zidentyfikowanego jako odpowiedź na pakiet wysłany pobrany z kolejki.
-Aby uniknąć aktywnego oczekiwania na komunikaty (np. "zawieszając" się na zmiennej współdzielonej), wątki odbierają sygnały poprzez wykorzystanie funkcji pselect(), która poza korzystaniem ze standardowych deskryptorów gniazd, powiadamia również w razie wystąpienia jednego z sygnałów.
+Sygnał SIGUSR1 to polecenie "kontynuuj wysyłanie pakietów", wydawane wątkowi wysyłającemu przez wątek odbierający po odebraniu pakietu zidentyfikowanego jako odpowiedź na pakiet wysłany pobrany z kolejki.
+Wątek wysyłający odbiera sygnał poprzez funkcję pselect() z odpowiednią maską sygnałów. Funkcja ta przerywa się przy wystąpieniu jednego z niezamaskowanych sygnałów.
 
-####Algorytm traceroute:
+####Warunki śmierci wątków
+1. Wątek odbierający - wykonanie całej trasy.
+2. Wątek odbierający - brak jakichkolwiek pakietów odebranych przez wątek odbierający przez czas określony w parametrach konfiguracyjnych. Gniazdo filtruje pakiety, więc próby wykonania operacji ping na naszym adresie nie będą powodować nieśmiertelności wątku.
+3. Wątek wysyłający - przekroczenie TTL.
+4. Wątek wysyłający - przekroczenie czasu oczekiwania na sygnał od wątku odbierającego.
+3. Wątek wysyłający - śmierć wątku odbierającego.
+ 
+####Algorytm pojedynczej operacji traceroute inicjowanej przez wątek zarządcy:
 
-1. Wątek wysyłający przyjmuje od Modułu nr 3 dane, określające, jaka trasa ma być wyznaczona.
+1. Wątek wysyłający przyjmuje od Modułu nr 1 dane, określające, jaka trasa ma być wyznaczona.
 
 2. n = 1.
 
-3. Wygeneruj za pomocą generatora pakiet o TTL = n, Identifier = numer zadania, Sequence = n, a następnie wyślij je i poinformuj wątek odbierający o wysłanych pakietach poprzez wstawienie pierwszego z nich i jego najważniejszych danych do współdzielonej kolejki.
+3. Wygeneruj za pomocą generatora pakiet o TTL = n, Identifier = numer zadania, Sequence = n, a następnie wyślij je.
 
-4. Czekaj na sygnał od wątku odbierającego (funkcja pselect() o określonej wartości timeout, powodującej automatyczne przejście do następnego zadania). Jeśli mamy kontynuować wysyłanie pakietów, n += 1 i wróć do punktu 4.
+4. Czekaj na sygnał od wątku odbierającego (funkcja pselect() o określonej wartości czasu aktywności timeout)
 
-5. Po zakończeniu traceroutingu wątek odbierający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment/kod błędu (struktura składająca się z nagłówka oraz listy adresów). Jeśli w kolejce są kolejne trasy do wyznaczania, rozpoczynamy pracę.
+4a. Jeśli mamy kontynuować wysyłanie pakietów, n += 1 i wróć do punktu 4.
+
+4b. Jeśli w czasie wyznaczonym przez parametr timeout nie otrzymaliśmy sygnału, wyślij kolejny pakiet o tym samym TTL i dekrementuj licznik możliwych powtórzeń max_packets_per_ttl dla danego TTL.
+
+4c. Jeśli wyczerpano limit powtórzeń dla danego TTL, sprawdź, czy wątek odbierający żyje - jeśli tak, poczekaj dodatkowy czas na sygnał. Jeśli nie, zakończ pracę wątku wysyłającego.
+
+5. Po zakończeniu traceroutingu wątek odbierający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment (struktura składająca się z nagłówka oraz listy adresów).
 
 ####Parametry dotyczące Modułu 2:
 
