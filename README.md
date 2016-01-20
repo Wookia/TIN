@@ -189,12 +189,9 @@ Wątek wysyłający odbiera sygnał poprzez funkcję pselect() z odpowiednią ma
 3. Wygeneruj za pomocą generatora pakiet o TTL = n, Identifier = numer zadania, Sequence = n, a następnie wyślij je.
 
 4. Czekaj na sygnał od wątku odbierającego (funkcja pselect() o określonej wartości czasu aktywności timeout)
-
-4a. Jeśli mamy kontynuować wysyłanie pakietów, n += 1 i wróć do punktu 4.
-
-4b. Jeśli w czasie wyznaczonym przez parametr timeout nie otrzymaliśmy sygnału, wyślij kolejny pakiet o tym samym TTL i dekrementuj licznik możliwych powtórzeń max_packets_per_ttl dla danego TTL.
-
-4c. Jeśli wyczerpano limit powtórzeń dla danego TTL, sprawdź, czy wątek odbierający żyje - jeśli tak, poczekaj dodatkowy czas na sygnał. Jeśli nie, zakończ pracę wątku wysyłającego.
+	Jeśli mamy kontynuować wysyłanie pakietów, n += 1 i wróć do punktu 4.
+	Jeśli w czasie wyznaczonym przez parametr timeout nie otrzymaliśmy sygnału, wyślij kolejny pakiet o tym samym TTL i dekrementuj licznik możliwych powtórzeń max_packets_per_ttl dla danego TTL.
+	Jeśli wyczerpano limit powtórzeń dla danego TTL, sprawdź, czy wątek odbierający żyje - jeśli tak, poczekaj dodatkowy czas na sygnał. Jeśli nie, zakończ pracę wątku wysyłającego.
 
 5. Po zakończeniu traceroutingu wątek odbierający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment (struktura składająca się z nagłówka oraz listy adresów).
 
