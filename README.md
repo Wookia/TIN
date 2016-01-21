@@ -1,4 +1,4 @@
-TIN
+﻿TIN
 ===================
 
 Celem zadania jest implementacja serwera, umożliwiającego wykonywanie mapowań połączeń pomiędzy ruterami. Zachowanie algorytmu traceroutingu zgodne jest z działaniem programu tracert ze środowiska MS Windows - program wysyła komunikaty ICMP ECHO_REQUEST z kolejnymi wartościami pola TTL i oczekuje komunikatów ICMP TIME_EXCEEDED. Zlecenie wykonania zadania oraz odbiór wyników wykorzystuje połączenie z wykorzystaniem protokołu HTTP i notacji/składni JSON. Program będzie zrealizowany w środowisku Linuks.
@@ -7,7 +7,7 @@ Uruchamianie programu
 -------------
 Program będzie uruchamiany w środowisku Linuks za pomocą przykładowej instrukcji: <b>./traceroutemapper [PLIK]</b>, gdzie argumenty między nawiasami kwadratowymi są opcjonalne. PLIK to ścieżka (jeśli podamy samą nazwę program sproboje znaleźć ten plik w folderze w ktorym znajduje sie wykonywany program), do miejsca gdzie znajduje się plik konfiguracyjny. W przypadku braku argumentu PLIK domyślnie wczytywane są dane konfiguracyjne wpisane w projekcie.
 
-Plik konfiguracyjny(domyślne dane w kodzie)
+Plik konfiguracyjny (domyślne dane w kodzie)
 -------------
 port_number:8080
 ip_address:127.0.0.1
