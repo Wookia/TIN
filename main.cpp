@@ -92,6 +92,7 @@ int main(int argc, char** argv)
     }
     else
     {
+		paramsPointer = new Params();
         std::cout<<"Domyslny plik konfiguracyjny"<<std::endl;
     }
     init_signal_handling();

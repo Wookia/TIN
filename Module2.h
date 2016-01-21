@@ -64,6 +64,7 @@ class Module2
         int max_packets_per_ttl;
         int timeout;
         int freq;
+				int identifier;
 };
 
 #endif

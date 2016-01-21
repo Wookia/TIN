@@ -235,10 +235,12 @@ void Server::communicationCenter(int connection) {
 										Packet packet;
 										packet.ip_address =task.ip[i];
 										packet.identifier = task.taskNumber;
+										packet.iterator = i;
                                         if (i+1 == task.size)
                                             packet.isLast = true;
                                         else
                                             packet.isLast = false;
+
 										queueInto->push(packet);
                 }
 
@@ -532,5 +534,3 @@ void Server::tokenize(const std::string& str, std::vector<std::string>& tokens,
       lastPos = pos + 1;
    }
 }
-
-

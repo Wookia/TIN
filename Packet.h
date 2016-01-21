@@ -14,7 +14,8 @@ class Packet
         long long int identifier;
 		int replyType;
         bool isLast;
-        
+				int iterator;
+
 		std::string ip_address;
 		Packet& operator= (Packet copiedPacket)
 		{
@@ -22,7 +23,7 @@ class Packet
 			this->identifier = copiedPacket.identifier;
 			this->replyType = copiedPacket.replyType;
 			this->ip_address = copiedPacket.ip_address;
-			
+
 			return *this;
 		}
 };

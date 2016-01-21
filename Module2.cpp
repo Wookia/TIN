@@ -136,7 +136,7 @@ void* Module2::senderThreadWorker(void* argument)
 	for(ttl = 1; ttl <= max_ttl; ttl++)
 	{
 		setsockopt(nasz_socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
-		packetgen.generatePacket(header, data, taskNumber%255, ttl);
+		packetgen.generatePacket(header, data, (taskNumber+identifier)%255, ttl);
 		module2Output << "Wysylanie pakietu TTL " << ttl << endl;
 		rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
 				0, (struct sockaddr*)&addr, sizeof(addr));
@@ -288,7 +288,7 @@ void* Module2::receiverThreadWorker(void* argument)
 
 		//result.addresses.front().road.push_back(senderAddress);
 		memset(&raddr, 0, sizeof(raddr));
-		if(receivedPacket.identifier != taskNumber%255) {
+		if(receivedPacket.identifier != (taskNumber+identifier)%255) {
             continue;
         }
         if(temproad.count(receivedPacket.sequence_ttl)==1)
@@ -326,6 +326,8 @@ void* Module2::managerThreadWorker(void* argument)
 	while(true)
 	{
 		Packet test = queueIntoModule->pop();
+        
+		identifier = test.identifier;
 		//do the traceroute
 		init(test.ip_address, test.identifier, max_packets_per_ttl);
 		startThreads();

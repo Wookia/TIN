@@ -1,0 +1,225 @@
+ID SOCKETU: 3
+Wysylanie pakietu TTL 1
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:1
+Identyfikator: 171
+10.0.2.2 Rodzina: 2 
+ip_address:10.0.2.2
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 2
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:2
+Identyfikator: 171
+192.168.42.129 Rodzina: 2 
+ip_address:192.168.42.129
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+count = 0
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+count = 0
+Wysylanie pakietu TTL 5
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:5
+Identyfikator: 171
+89.108.198.2 Rodzina: 2 
+ip_address:89.108.198.2
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 6
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:6
+Identyfikator: 171
+72.14.221.100 Rodzina: 2 
+ip_address:72.14.221.100
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 7
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:7
+Identyfikator: 171
+66.249.95.15 Rodzina: 2 
+ip_address:66.249.95.15
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 8
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:8
+Identyfikator: 171
+72.14.238.75 Rodzina: 2 
+ip_address:72.14.238.75
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 9
+Odebrano 32 bajtow
+Dlugosc headera ip 5
+Otrzymana sekwencja:9
+Identyfikator: 171
+216.58.209.78 Rodzina: 2 
+ip_address:216.58.209.78
+Uff, juz po wszystkim. Odbieracz odmelodwuje sie!
+ID SOCKETU: 3
+Wysylanie pakietu TTL 1
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:1
+Identyfikator: 171
+10.0.2.2 Rodzina: 2 
+ip_address:10.0.2.2
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 2
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:2
+Identyfikator: 171
+192.168.42.129 Rodzina: 2 
+ip_address:192.168.42.129
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+count = 0
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+count = 0
+Wysylanie pakietu TTL 5
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:5
+Identyfikator: 171
+89.108.198.2 Rodzina: 2 
+ip_address:89.108.198.2
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 6
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:6
+Identyfikator: 171
+72.14.221.100 Rodzina: 2 
+ip_address:72.14.221.100
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 7
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:7
+Identyfikator: 171
+66.249.95.15 Rodzina: 2 
+ip_address:66.249.95.15
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 8
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:8
+Identyfikator: 171
+72.14.238.75 Rodzina: 2 
+ip_address:72.14.238.75
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 9
+Odebrano 32 bajtow
+Dlugosc headera ip 5
+Otrzymana sekwencja:9
+Identyfikator: 171
+216.58.209.78 Rodzina: 2 
+ip_address:216.58.209.78
+Uff, juz po wszystkim. Odbieracz odmelodwuje sie!
+ID SOCKETU: 3
+Wysylanie pakietu TTL 1
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:1
+Identyfikator: 171
+10.0.2.2 Rodzina: 2 
+ip_address:10.0.2.2
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 2
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:2
+Identyfikator: 171
+192.168.42.129 Rodzina: 2 
+ip_address:192.168.42.129
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+Wysylanie pakietu TTL 3
+count = 0
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+Wysylanie pakietu TTL 4
+count = 0
+Wysylanie pakietu TTL 5
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:5
+Identyfikator: 171
+89.108.198.2 Rodzina: 2 
+ip_address:89.108.198.2
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 6
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:6
+Identyfikator: 171
+72.14.221.100 Rodzina: 2 
+ip_address:72.14.221.100
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 7
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:7
+Identyfikator: 171
+66.249.95.15 Rodzina: 2 
+ip_address:66.249.95.15
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 8
+Odebrano 56 bajtow
+Dlugosc headera ip 5
+TIME EXCEEDED
+Otrzymana sekwencja:8
+Identyfikator: 171
+72.14.238.75 Rodzina: 2 
+ip_address:72.14.238.75
+Wysylanie sygnalu!
+Wysylanie pakietu TTL 9
+Odebrano 32 bajtow
+Dlugosc headera ip 5
+Otrzymana sekwencja:9
+Identyfikator: 171
+216.58.209.78 Rodzina: 2 
+ip_address:216.58.209.78
+Uff, juz po wszystkim. Odbieracz odmelodwuje sie!

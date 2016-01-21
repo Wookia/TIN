@@ -5,9 +5,19 @@ Celem zadania jest implementacja serwera, umożliwiającego wykonywanie mapowań
 
 Uruchamianie programu
 -------------
-Program będzie uruchamiany w środowisku Linuks za pomocą przykładowej instrukcji: <b>./traceroutemapper [-conf PLIK] [-log]</b>, gdzie argumenty między nawiasami kwadratowymi są opcjonalne.
-Flaga -conf informuje o wczytaniu innego pliku konfiguracyjnego niż domyślny. PLIK to ścieżka, pod którą znajduje się plik konfiguracyjny. W przypadku braku flagi -conf domyślnie wczytywany jest plik konfiguracyjny o nazwie "ConfigFile.conf". Plik konfiguracyjny zawiera wszelkie parametry, charakteryzujące moduły 1 i 2 oraz ścieżkę logów modułów. Wszystkie te parametry mają wartości domyślne na wypadek uruchomienia programu bez pliku konfiguracyjnego (nawet domyślnego).
-Flaga -log aktywuje tryb logowania. Podczas trybu logowania zostanie utworzony dla każdego modułu osobny log (w celu zwiększenia czytelności). Położenie tych logów jest opisane w pliku konfiguracyjnym (parametr LOGPATH). Jeśli uruchomiono program bez pliku konfiguracyjnego, to domyślną ścieżką logów będzie folder, w którym znajduje się aplikacja "traceroutemapper".
+Program będzie uruchamiany w środowisku Linuks za pomocą przykładowej instrukcji: <b>./traceroutemapper [PLIK]</b>, gdzie argumenty między nawiasami kwadratowymi są opcjonalne. PLIK to ścieżka (jeśli podamy samą nazwę program sproboje znaleźć ten plik w folderze w ktorym znajduje sie wykonywany program), do miejsca gdzie znajduje się plik konfiguracyjny. W przypadku braku argumentu PLIK domyślnie wczytywane są dane konfiguracyjne wpisane w projekcie.
+
+Plik konfiguracyjny(domyślne dane w kodzie)
+-------------
+port_number:8080
+ip_address:127.0.0.1
+max_ttl:20
+max_packets_per_ttl:8
+freq:3
+timeout:20
+repo_path:
+size_limit:100000
+
 
 Podział na moduły
 -------------
@@ -40,7 +50,7 @@ Struktury danych
 -------------
 
 ####JSON:
-Żądanie wykonania tracerouta:
+Żądanie wykonania tracerouta(nr 1.):
 ```
 {
 	addresses: [
@@ -50,13 +60,13 @@ Struktury danych
 		{...}]`
 }
 ```
-Zwrotka z numerem zadania:
+Zwrotka z numerem zadania(nr. 2):
 ```
 {
 	task: nr
 }
 ```
-Zapytanie o dane z numeru zadania:
+Zapytanie o dane z numeru zadania(nr 3.):
 ```
 {
 	tasks:[
@@ -66,7 +76,7 @@ Zapytanie o dane z numeru zadania:
 		{...}]
 }
 ```
-Dane z zadania:
+Dane z zadania(nr. 4):
 ```
 {
 	tasks:[
@@ -83,31 +93,6 @@ Dane z zadania:
 }
 ```
 
-####Obiekty:
-Zadanie:
-```
-class Task:
-	ip[]
-	task_number
-```
-Wynik zadania(z Modułu 2):
-```
-class TaskResult:
-	task_number
-	addresses[traceroute[]] //tablica tablic (wiele adresow ip)
-```
-Adresy:
-```
-class Addresses:
-	taks: nr
-	addresses[traceroute[]] //tablica tablic (wiele adresow ip)
-```
-Sparsowane dane:
-```
-class ParsedData:
-	Addresses[]
-```
-
 ####System plików
 Zadania:
 ```
@@ -118,24 +103,21 @@ Treść: ip; ip; ip; ip; ip;\n ip; ip; ip; \n ip; ip; ip; ip; \n ...
 Szczegółowy opis działania modułów
 -------------
 ###Moduł 1
-Moduł 1 odbiera JSON'y, przesyłane od kilenta za pomocą protokołu HTTP(POST). Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań.
-####/doTraceroute
-Moduł odbiera JSON'a z danymi do tracerouta (struktura powyżej), przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a), a następnie umieszcza obiekt w kolejce oczekujących.
-####/getData
-Moduł odbiera JSON'a z numerem zadania. Składa żądanie do Modułu 3. o dane o zadanym numerze. Jeśli w zwrocie dostaje dane, to parsuje je do JSON'a którego zwraca. Jeśli nie, zwraca odpowiedni kod błędu.
+Moduł 1 odbiera JSON'y, przesyłane od kilenta za pomocą protokołu HTTP(POST). Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań. W przypadku błędnej struktury lub zbyt dużego rozmiaru JSON'a, serwer zwraca błąd 400 BAD REQUEST z informacją typu JSON o powodzie błędu.
+####doTraceroute
+Moduł odbiera JSON'a z danymi do tracerouta (nr. 1), przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a), a następnie umieszcza obiekt w kolejce oczekujących.
+####getData
+Moduł odbiera JSON'a z numerami zadań(nr. 3). Wywołuje metodę Modułu 3. o dane o zadanym numerze. Jeśli w zwrocie dostaje dane, to parsuje je do JSON'a którego zwraca. Jeśli nie, zwraca '404 NOT FOUND'.
 
 Moduł 1 działa na "jednym" samoklonującym się wątku, który w sytuacji odebrania żądania tworzy swojego klona, a sam zajmuje się wykonaniem zadanego zadania.
-
-####Nasłuchiwanie
-Jeżeli uruchomiono program bez pliku konfiguracyjnego, to domyślnym portem, na którym nasłuchuje serwer jest port 80 (HTTP), a domyślnym adresem - localhost. W przeciwnym przypadku numer portu oraz adres IP są pobierane z pliku konfiguracyjnego.
 
 ####Parametry dotyczące Modułu 1:
 
 Parametry przechowywane są w standardowym tekstowym pliku konfiguracyjnym ConfigFile.conf - jeden parametr odpowiadający jednej linii pliku:
 
-PORTNUMBER - numer portu, na którym nasłuchuje serwer
+port_number - numer portu, na którym nasłuchuje serwer
 
-IPADDRESS - adres IP, na którym nasłuchuje serwer
+ip_address - adres IP, na którym nasłuchuje serwer
 
 ###Moduł 2
 Moduł nr 2 wykonuje właściwą operację traceroute pakietów. Podzielony jest na cztery zasadnicze elementy: wątek zarządcy, generator pakietów (działający w wątku wysyłającym), wątek wysyłający pakiety oraz wątek odbierający pakiety. Wykorzystuje protokół ICMP - internetowy protokół komunikatów kontrolnych.
@@ -179,7 +161,7 @@ Wątek wysyłający odbiera sygnał poprzez funkcję pselect() z odpowiednią ma
 3. Wątek wysyłający - przekroczenie TTL.
 4. Wątek wysyłający - przekroczenie czasu oczekiwania na sygnał od wątku odbierającego.
 3. Wątek wysyłający - śmierć wątku odbierającego.
- 
+
 ####Algorytm pojedynczej operacji traceroute inicjowanej przez wątek zarządcy po pobraniu zadania:
 
 1. Wątek zarządcy zapisuje dane dotyczące zadania w odpowiednich polach obiektu.
@@ -193,32 +175,30 @@ Wątek wysyłający odbiera sygnał poprzez funkcję pselect() z odpowiednią ma
 	Jeśli w czasie wyznaczonym przez parametr timeout nie otrzymano sygnału, wyślij kolejny pakiet o tym samym TTL i dekrementuj licznik możliwych powtórzeń max_packets_per_ttl dla danego TTL.
 	Jeśli wyczerpano limit powtórzeń dla danego TTL, sprawdź, czy wątek odbierający żyje - jeśli tak, poczekaj dodatkowy czas na sygnał. Jeśli nie, zakończ pracę wątku wysyłającego.
 
-5. Po zakończeniu traceroutingu wątek odbierający przesyła do Modułu nr 3 wyznaczoną trasę lub jej fragment (struktura składająca się z nagłówka oraz listy adresów).
+5. Po zakończeniu traceroutingu wątek odbierający wykonuje metodę Modułu nr 3 przekazując wyznaczoną trasę lub jej fragment (struktura składająca się z nagłówka oraz listy adresów).
 
 ####Parametry dotyczące Modułu 2:
 
 Parametry przechowywane są w pliku konfiguracyjnym programu razem z resztą parametrów dotyczących działania aplikacji.
 
-MAX_TTL - domyślna wartość maksymalnego czasu życia pakietu.
+max_ttl - domyślna wartość maksymalnego czasu życia pakietu.
 
-MAX_PACKETS_PER_TTL - domyślna ilość pakietów wysyłanych do danego adresu z określoną wartościa TTL. Ze względu na brak gwarancji dostarczenia.
+max_packets_per_ttl - domyślna ilość pakietów wysyłanych do danego adresu z określoną wartościa TTL. Ze względu na brak gwarancji dostarczenia.
 
-FREQ - częstotliwość wysyłania pakietów. Część zapór ogniowych może wykryć dużą ilość pakietów ICMP i zablokować dalszy ruch.
+freq - częstotliwość wysyłania pakietów. Część zapór ogniowych może wykryć dużą ilość pakietów ICMP i zablokować dalszy ruch.
 
-TIMEOUT - maksymalny czas oczekiwania na odpowiedź.
+timeout - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
-Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądania do wszystkich pozostałych modułów.
+Moduł trzy obsługuje dostęp do systemu plikow.
 ####Interakcja z Modułem 1:
-1. Odbiór danych do tracerouta.
-2. Odbiór żądania danych wynikowych:
+1. Odbiór żądania danych wynikowych:
 	a. Brak gotowych.
 	b. Sparsowanie danych i przesłanie do Modułu 1.
 
-####Interakcja z Modułem 2:
-1. Wstawienie do kolejki danych do tracerouta.
-2. Nadanie sygnału SIGUSR2 do Modułu 2. w celu pobudzenia wątków tego modułu.
-3. Odebranie sygnału SIGUSR2 przez odpowiedni wątek od Modułu 2., informującego o danych z tracerouta.
-4. Odbiór z kolejki danych z tracerouta i sparsowanie ich.
+####Interakcja z Modułem 1:
+1. Odebranie danych do zapisania:
+	a. Stworzenie pliku w wersji roboczej(gdy nie wszystkie dane odebrane) - 'taskNr'+'r'+'.txt'
+	b. Zmiana nazwy pliku z wersji roboczej na wersję gotową do odbioru  - 'taskNr'+'.txt'
 
 ####Interakcja z systemem plików:
 1. Dodanie nowego zadania (utwórz plik z dopiskiem ze niegotowy).
@@ -226,7 +206,3 @@ Moduł trzy zarządza wszelkim ruchem na serwerze. Obsługuje i wysyła żądani
 3. Wyciągnięcie informacji o stanie zadania:
 	a. Nieskończone.
 	b. Gotowe - parsowanie danych.
-
-Moduł będzie działał na dwóch wątkach.
-Pierwszy będzie cyklicznie sprawdzał, czy w kolejkach nie ma zadań do wykonania, a następnie w zależności od sytuacji wykonywał odpowiednie zadania, takie jak: parsowanie, zapisywanie do plików czy przesyłanie danych między kolejkami.
-Drugi będzie przeznaczony tylko i wyłącznie do sytuacji związanych z żądaniami wyników, jako że takie działania mają priorytet (klient oczekuję na reakcję serwera). Będzie on sprawdzał gotowość zadania i w zależności od sytuacji zwracał informację o tym, że zadanie jest jeszcze nie skończone lub parsował dane z plików do wersji obiektowej i przesyłał z powrotem do Modułu 1.
