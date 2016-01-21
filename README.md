@@ -53,25 +53,25 @@ Struktury danych
 Żądanie wykonania tracerouta(nr 1.):
 ```
 {
-	addresses: [
+	"addresses": [
 		{
-			address: ip
+			"address": "ip"
 		},
-		{...}]`
+		{...}]
 }
 ```
 Zwrotka z numerem zadania(nr. 2):
 ```
 {
-	task: nr
+	"task": nr
 }
 ```
 Zapytanie o dane z numeru zadania(nr 3.):
 ```
 {
-	tasks:[
+	"tasks":[
 		{
-			task: nr
+			"task": nr
 		},
 		{...}]
 }
@@ -79,12 +79,16 @@ Zapytanie o dane z numeru zadania(nr 3.):
 Dane z zadania(nr. 4):
 ```
 {
-	tasks:[
+	"tasks":[
 	{
-	task: nr,
-	addresses:[
+	"task": nr,
+	"addresses":[
 		{
-			address: ip,
+			"traceroute": [
+				{
+				"address": "ip"
+				},
+				{...}]
 		},
 		{...}]
 	},
@@ -103,11 +107,11 @@ Treść: ip; ip; ip; ip; ip;\n ip; ip; ip; \n ip; ip; ip; ip; \n ...
 Szczegółowy opis działania modułów
 -------------
 ###Moduł 1
-Moduł 1 odbiera JSON'y, przesyłane od kilenta za pomocą protokołu HTTP(POST). Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań. W przypadku błędnej struktury lub zbyt dużego rozmiaru JSON'a, serwer zwraca błąd 400 BAD REQUEST z informacją typu JSON o powodzie błędu.
+Moduł 1 odbiera JSON'y, przesyłane od kilenta za pomocą protokołu HTTP(POST). Następnie w zależności od danego żądania będzie wykonywał jedno z dwóch zadań. W przypadku błędnej struktury lub zbyt dużego rozmiaru JSON'a serwer zwraca błąd 400 BAD REQUEST z informacją typu JSON o powodzie błędu.
 ####doTraceroute
 Moduł odbiera JSON'a z danymi do tracerouta (nr. 1), przekształca go do obiektu, nadaje unikalny numer zadania (który zwraca również w postaci JSON'a), a następnie umieszcza obiekt w kolejce oczekujących.
 ####getData
-Moduł odbiera JSON'a z numerami zadań(nr. 3). Wywołuje metodę Modułu 3. o dane o zadanym numerze. Jeśli w zwrocie dostaje dane, to parsuje je do JSON'a którego zwraca. Jeśli nie, zwraca '404 NOT FOUND'.
+Moduł odbiera JSON'a z numerami zadań (nr. 3). Wywołuje metodę Modułu 3. o dane o zadanym numerze. Jeśli w zwrocie dostaje dane, to parsuje je do JSON'a którego zwraca. Jeśli nie, zwraca '404 NOT FOUND'.
 
 Moduł 1 działa na "jednym" samoklonującym się wątku, który w sytuacji odebrania żądania tworzy swojego klona, a sam zajmuje się wykonaniem zadanego zadania.
 
@@ -183,9 +187,9 @@ Parametry przechowywane są w pliku konfiguracyjnym programu razem z resztą par
 
 max_ttl - domyślna wartość maksymalnego czasu życia pakietu.
 
-max_packets_per_ttl - domyślna ilość pakietów wysyłanych do danego adresu z określoną wartościa TTL. Ze względu na brak gwarancji dostarczenia.
+max_packets_per_ttl - domyślna liczba pakietów wysyłanych do danego adresu z określoną wartościa TTL. Ze względu na brak gwarancji dostarczenia.
 
-freq - częstotliwość wysyłania pakietów. Część zapór ogniowych może wykryć dużą ilość pakietów ICMP i zablokować dalszy ruch.
+freq - częstotliwość wysyłania pakietów. Część zapór ogniowych może wykryć dużą liczba pakietów ICMP i zablokować dalszy ruch.
 
 timeout - maksymalny czas oczekiwania na odpowiedź.
 ###Moduł 3
