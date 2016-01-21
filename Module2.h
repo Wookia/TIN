@@ -28,7 +28,8 @@
 #include <fstream>
 #include "Params.h"
 #include <fcntl.h>
-
+#include <map>
+#include <iterator>
 
 extern "C" void* senderThreadWorkerDel(void*);
 extern "C" void* receiverThreadWorkerDel(void*);

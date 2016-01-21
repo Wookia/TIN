@@ -25,7 +25,7 @@ Module2::Module2 (SynchronizedQueue<Packet>* queueIntoM2, Params* params, Module
     sem_init(&senderSem, 0, 0);
 	sem_init(&receiverSem, 0, 0);
 	nasz_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
-	
+
 	queueIntoModule = queueIntoM2;
 	if (nasz_socket == -1)
 	{
@@ -45,10 +45,10 @@ void Module2::closeModule()
 	int test = 0;
 	sem_getvalue(&senderSem,&test);
 	if(test != 0) pthread_cancel(senderThread);
-	
+
 	sem_getvalue(&receiverSem,&test);
 	if(test != 0) pthread_cancel(receiverThread);
-	
+
 	sem_destroy(&senderSem);
 	sem_destroy(&receiverSem);
 	if(pthread_kill(managerThread, 0) == 0) pthread_cancel(managerThread);
@@ -76,8 +76,11 @@ int Module2::startThreads()
 
 int Module2::joinThreads()
 {
-    pthread_join(senderThread, NULL);
     pthread_join(receiverThread, NULL);
+    int test = 0;
+	sem_getvalue(&senderSem,&test);
+	if(test != 0) pthread_cancel(senderThread);
+    pthread_join(senderThread, NULL);
     return 0;
 }
 
@@ -133,7 +136,7 @@ void* Module2::senderThreadWorker(void* argument)
 	for(ttl = 1; ttl <= max_ttl; ttl++)
 	{
 		setsockopt(nasz_socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
-		packetgen.generatePacket(header, data, 1, ttl);
+		packetgen.generatePacket(header, data, taskNumber%255, ttl);
 		module2Output << "Wysylanie pakietu TTL " << ttl << endl;
 		rc = sendto(nasz_socket,buf,sizeof(struct icmphdr) + sizeof(int),
 				0, (struct sockaddr*)&addr, sizeof(addr));
@@ -196,7 +199,9 @@ void* Module2::receiverThreadWorker(void* argument)
 	int rc;
 	int offset = 28;
 	int count;
-	int retries = 5;
+	std::map<int,string> temproad;
+
+	int retries = max_packets_per_ttl;
 	char rbuf[60]; //sizeof(struct iphdr) + sizeof(struct icmp)
 	struct sockaddr_in raddr;
     socklen_t raddr_len;
@@ -205,6 +210,7 @@ void* Module2::receiverThreadWorker(void* argument)
     char str[INET_ADDRSTRLEN];
     raddr_len = sizeof(raddr);
     result.addresses.clear();
+    temproad.clear();
 		Traceroute traceroute;
     result.addresses.push_back(traceroute);
 		result.taskNr = -1;
@@ -217,7 +223,15 @@ void* Module2::receiverThreadWorker(void* argument)
 				module2Output << "count = " << count << endl;
 				retries--;
 				if(retries==0)
-					return NULL;
+                    {
+                    for(std::map<int,string>::iterator it2 = temproad.begin() ; it2 !=temproad.end(); it2++ )
+                        {
+                            result.addresses.front().road.push_back(it2->second);
+                        }
+                        temproad.clear();
+                        sem_wait(&receiverSem);
+                        return NULL;
+                    }
 				FD_ZERO(&set2);
 				FD_SET(nasz_socket, &set2);
 				timerSet.tv_sec = 20;
@@ -226,7 +240,7 @@ void* Module2::receiverThreadWorker(void* argument)
 
 				continue;
 		}
-		retries = 5;
+		retries = max_packets_per_ttl;
 		rc = recvfrom(nasz_socket, rbuf, sizeof(rbuf), 0, (struct sockaddr*)&raddr, &raddr_len);
 		if (rc == -1)
 		{
@@ -242,7 +256,6 @@ void* Module2::receiverThreadWorker(void* argument)
 		{
 			fprintf(stderr, "Expected ICMP packet, got %u\n", iphdr->protocol);
 			module2Output << "Expected ICMP packet, got " << iphdr->protocol << endl;
-			//exit(1);			//nie exit
 			continue;
 		}
 		icmphdr = (struct icmphdr*)(rbuf + (iphdr->ihl * 4));
@@ -252,8 +265,7 @@ void* Module2::receiverThreadWorker(void* argument)
 		{
 			fprintf(stderr, "Expected ICMP echo-reply, got %u\n", icmphdr->type);
 			module2Output << "Expected ICMP echo-reply, got " << icmphdr->type << endl;
-			//exit(1);	//nie exit, ale trzeba cos zrobic :/ jezeli bedzie przychodzic w kolko icmp 8 jak w przypadku ktoregos zadania to nigdy nie skonczy w tej chwili
-			continue; //przy zalozonym filtrze nigdy nie powinno dojsc do tego miejsca, jezeli tak to aplikacja sie wysypie w koncu na 99%
+			continue;
 		}
 		if(icmphdr->type == ICMP_TIME_EXCEEDED)
 		{
@@ -265,20 +277,35 @@ void* Module2::receiverThreadWorker(void* argument)
 		std::string senderAddress = inet_ntop(AF_INET, &(raddr.sin_addr), str, INET_ADDRSTRLEN);
 		module2Output << senderAddress << " Rodzina: " << raddr.sin_family <<" " << endl;
 		Packet receivedPacket;
-
-		//JEZELI CHCEMY TRZYMAC CALA STRUKTURE IPHDR TRZEBA ZROBIC JEJ KOPIOWANIE DO KLASY PACKET
+        //FILTROWANIE, co zrobic przy continue?
 		receivedPacket.identifier = icmphdr->un.echo.id;
 		receivedPacket.sequence_ttl = icmphdr->un.echo.sequence;
 		receivedPacket.replyType = icmphdr->type;
 		receivedPacket.ip_address = senderAddress;
 		module2Output << "ip_address:" << receivedPacket.ip_address << endl;
 		result.taskNr = taskNumber;
-		result.addresses.front().road.push_back(senderAddress);
+
+
+		//result.addresses.front().road.push_back(senderAddress);
 		memset(&raddr, 0, sizeof(raddr));
+		if(receivedPacket.identifier != taskNumber%255) {
+            continue;
+        }
+        if(temproad.count(receivedPacket.sequence_ttl)==1)
+        {
+            continue;
+        }
+        //temproad.insert(std::pair<int,std::string>(receivedPacket.sequence_ttl,senderAddress));
+        temproad[receivedPacket.sequence_ttl] = senderAddress;
 
 
 		if(senderAddress == tracedAddress)
 		{
+				for(std::map<int,string>::iterator it2 = temproad.begin() ; it2 !=temproad.end(); it2++ )
+                        {
+                            result.addresses.front().road.push_back(it2->second);
+                        }
+            temproad.clear();
 			module2Output << "Uff, juz po wszystkim. Odbieracz odmelodwuje sie!" << endl;
 			sem_wait(&receiverSem);
 			return NULL;
