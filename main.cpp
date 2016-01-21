@@ -70,14 +70,10 @@ void init_signal_handling()
     sigaction(SIGINT, &s3, NULL);
     
     sigset_t signalSet;
-    //sigset_t unblockedSignalsSet;
     sigemptyset(&signalSet);
-    //sigemptyset(&unblockedSignalsSet);
     sigaddset(&signalSet, SIGUSR2);
     sigaddset(&signalSet, SIGUSR1);
-    //sigaddset(&unblockedSignalsSet, SIGINT);
     sigprocmask(SIG_BLOCK, &signalSet, NULL);
-    //sigprocmask(SIG_UNBLOCK, &unblockedSignalsSet, NULL);
 }
 
 int main(int argc, char** argv)

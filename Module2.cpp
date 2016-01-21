@@ -6,7 +6,7 @@ struct icmp_filter {
 	__u32	data;
 };
 #endif
-//gotohell
+
 
 using namespace std;
 
@@ -214,6 +214,18 @@ void* Module2::receiverThreadWorker(void* argument)
 		Traceroute traceroute;
     result.addresses.push_back(traceroute);
 		result.taskNr = -1;
+		
+	icmp_filter filter;
+    filter.data = ~((1<<ICMP_SOURCE_QUENCH) |
+                            (1<<ICMP_DEST_UNREACH) |
+                            (1<<ICMP_TIME_EXCEEDED) |
+                            (1<<ICMP_REDIRECT) |
+                            (1<<ICMP_ECHOREPLY));
+	if(setsockopt(nasz_socket, SOL_RAW, ICMP_FILTER, (char *)&filter, sizeof(filter)) < 0)
+            {
+                perror("setsockopt(ICMP_FILTER)");
+                exit(3);
+            }
 	while(1)
 	{
 		count = 1;
@@ -260,7 +272,6 @@ void* Module2::receiverThreadWorker(void* argument)
 		}
 		icmphdr = (struct icmphdr*)(rbuf + (iphdr->ihl * 4));
 		module2Output << "Dlugosc headera ip "<< iphdr->ihl << endl;
-		//printf("Dlugosc headera icmp %d\n", icmphdr->ihl);
 		if (!(icmphdr->type == ICMP_ECHOREPLY ||  icmphdr->type == ICMP_TIME_EXCEEDED))
 		{
 			fprintf(stderr, "Expected ICMP echo-reply, got %u\n", icmphdr->type);
@@ -277,7 +288,6 @@ void* Module2::receiverThreadWorker(void* argument)
 		std::string senderAddress = inet_ntop(AF_INET, &(raddr.sin_addr), str, INET_ADDRSTRLEN);
 		module2Output << senderAddress << " Rodzina: " << raddr.sin_family <<" " << endl;
 		Packet receivedPacket;
-        //FILTROWANIE, co zrobic przy continue?
 		receivedPacket.identifier = icmphdr->un.echo.id;
 		receivedPacket.sequence_ttl = icmphdr->un.echo.sequence;
 		receivedPacket.replyType = icmphdr->type;
@@ -285,8 +295,6 @@ void* Module2::receiverThreadWorker(void* argument)
 		module2Output << "ip_address:" << receivedPacket.ip_address << endl;
 		result.taskNr = taskNumber;
 
-
-		//result.addresses.front().road.push_back(senderAddress);
 		memset(&raddr, 0, sizeof(raddr));
 		if(receivedPacket.identifier != (taskNumber+identifier)%255) {
             continue;
@@ -295,7 +303,6 @@ void* Module2::receiverThreadWorker(void* argument)
         {
             continue;
         }
-        //temproad.insert(std::pair<int,std::string>(receivedPacket.sequence_ttl,senderAddress));
         temproad[receivedPacket.sequence_ttl] = senderAddress;
 
 
@@ -322,20 +329,17 @@ void* Module2::receiverThreadWorker(void* argument)
 
 void* Module2::managerThreadWorker(void* argument)
 {
-	//getAJob()
+
 	while(true)
 	{
 		Packet test = queueIntoModule->pop();
         
 		identifier = test.identifier;
-		//do the traceroute
 		init(test.ip_address, test.identifier, max_packets_per_ttl);
 		startThreads();
 		joinThreads();
-		//get the results back
         result.isLast = test.isLast;
 		module3->saveData(result);
-		//back to 1
 	}
 	return NULL;
 }

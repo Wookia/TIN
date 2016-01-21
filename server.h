@@ -56,7 +56,6 @@ class Server {
 		std::vector<std::string> splitData;
 		
 		void tokenize(const std::string& str, std::vector<std::string>& tokens,const std::string& delimiters, bool trimEmpty);
-		bool checkIfBracketsPaired(std::string temp);
 		
 
 	public:

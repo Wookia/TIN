@@ -39,7 +39,6 @@ class Module2
 		Module2();
 		void closeModule();
 		Module2 (SynchronizedQueue<Packet>* queueIntoM2, Params* params, Module3* module3);
-		//ZMIENIC Z PACKET NA COS CO BEDZIE REPREZENTOWAC ZADANIE
 		int init(std::string& address, long long int taskNr, int newRetries);
 		int startThreads();
 		int joinThreads();

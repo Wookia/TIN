@@ -75,7 +75,6 @@ void Server::startThreads() {
 
 	int i = 0;
 	int j = 0;
-	//the processCount variable is basically a tool for easy bug tracing - it represents the total number of working threads
 	//processing HTTP requests
 	processCount = 0;
 	int iteration = 0;
@@ -102,7 +101,6 @@ void Server::startThreads() {
 			pack.connection = connection;
 			pthread_create(&childThread[i], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
 			processCount++;
-			//goto end;
 		}
 		else for (j=0; j<TABLE_SIZE; j++) {
 			printf("\nBIERZEMY NOWE\n");
@@ -114,11 +112,9 @@ void Server::startThreads() {
 				pack.connection = connection;
 				pthread_create(&childThread[j], NULL, childThreadFunctionDel, reinterpret_cast<void*>(&pack));
 				processCount++;
-				//goto end;
 				break;
 			}
 		}
-		//end: ;
 		i++;
 		if (i == TABLE_SIZE) {
 			printf("\nCZYSCIMY!\n");
@@ -311,7 +307,7 @@ string Server::reading(int connection) throw(string) {
 	do
 	{
 		std::cout << "temp na poczatku petli" << temp << endl;
-		if ((bytesReceived = recv(connection, dataReceived, sizeof(dataReceived), 0)) == -1) {
+		if ((bytesReceived = recv(connection, dataReceived, sizeof(dataReceived), 0)) == -1) {		//pobieranie danych do bufora dataReceived[10000] max 10000bajtow za kazdym razem od 0
 			perror("reading");
 			exit(1);
 		}
@@ -320,7 +316,7 @@ string Server::reading(int connection) throw(string) {
 			break;
 		}
 		totalReceived += bytesReceived;
-		temp.append(dataReceived,bytesReceived);
+		temp.append(dataReceived,bytesReceived);		//zrzucenie bufora do string. append - wiadomosc moze byc odebrana w kilku obiegach petli
 		std::cout << "temp po append " << temp << endl;
 		found = temp.find("\r\n\r\n",0,4);
 		if (found!=std::string::npos) {
@@ -380,8 +376,6 @@ string Server::reading(int connection) throw(string) {
 		}
 
 
-
-		//cout << dataReceived << endl;
 
 	} while(foundEnd==false);
 	splitData.clear();
